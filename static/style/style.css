@@ -1,0 +1,11 @@
+.mi-nav {
+    font-size: 22px;
+}
+
+.navbar-nav .nav-link {
+    display: inline-block;
+    margin-left: 10px;
+    margin-right: 20px;
+    margin-top: 10px;
+    color:#8fb9e1;
+}
