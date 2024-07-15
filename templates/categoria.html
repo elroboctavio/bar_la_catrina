@@ -1,0 +1,30 @@
+{%extends 'bootstrap/base.html'%}
+{%block head%}
+    {{super()}}
+    <title>
+        {%block title%}
+        Categoria
+        {%endblock%}
+    </title>
+    <!-- <link rel="stylesheet" href="../static/style/style.css"> -->
+{%endblock%}
+
+{%block body%}
+    {%block navbar%}
+        {%include 'navbar.html'%}
+    {%endblock%}
+
+    {%block content%}
+    <H2>Listado de Categorias</H2>
+        <table class="table table-success table-striped">
+            <th scope="col">ID</th>
+            <th scope="col">Nombre</th>
+            {% for fila in datos %}
+            <tr>
+                <td>{{ fila[0] }}</td>
+                <td>{{ fila[1] }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    {%endblock%}
+{%endblock%}
