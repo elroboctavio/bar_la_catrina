@@ -1,0 +1,46 @@
+{%extends 'bootstrap/base.html'%}
+{%block head%}
+    {{super()}}
+    <title>
+        {%block title%}
+        Biblioteca Web App
+        {%endblock%}
+    </title>
+    <!-- <link rel="stylesheet" href="../static/style/style.css"> -->
+{%endblock%}
+
+{%block body%}
+    {%block navbar%}
+        {%include 'navbar.html'%}
+    {%endblock%}
+
+    {%block content%}
+    <H2>Listado de Productos</H2>
+        <table class="table table-success table-striped">
+            <th scope="col">Categoria</th>
+            <th scope="col">Nombre</th>
+            <th scope="col">Precio</th>
+            <th scope="col">Estado</th>
+            <th scope="col">Precio</th>
+            <th scope="col">Contenido</th>
+            <th scope="col">Stock</th>
+            <th scope="col">Marca</th>
+            <th scope="col">Codigo de Barras</th>
+            {% for fila in datos %}
+            <tr>
+                <td>{{ fila[0] }}</td>
+                <td>{{ fila[1] }}</td>
+                <td>{{ fila[2] }}</td>
+                <td>{{ fila[3] }}</td>
+                <td>{{ fila[4] }}</td>
+                <td>{{ fila[5] }}</td>
+                <td>{{ fila[6] }}</td>
+                <td>{{ fila[7] }}</td>
+                <td>{{ fila[8] }}</td>
+                <td>{{ fila[9] }}</td>
+
+            </tr>
+            {% endfor %}
+        </table>
+    {%endblock%}
+{%endblock%}

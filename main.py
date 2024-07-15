@@ -11,3 +11,28 @@ bootstrap = Bootstrap(app)
 @app.route('/')
 def index():
     return render_template('index.html')
+
+@app.route('/login')
+def login():
+    return render_template('login.html')
+
+@app.route('/productos')
+def productos():
+    # Conectar con la base de datos
+    conexion = psycopg2.connect (
+        database="bar_la_catrina",
+        user="postgres",
+        password="tVE4QgrFP9rnEb",
+        host="localhost",
+        port="5432"
+    )
+    # crear un cursor (objeto para recorrer las tablas)
+    cursor = conexion.cursor()
+    # ejecutar una consulta en postgres
+    cursor.execute('''SELECT * FROM public.producto''')
+    #recuperar la informacion
+    datos = cursor.fetchall()
+    #cerrar cursos y conexion a la base de datos
+    cursor.close()
+    conexion.close()
+    return render_template('productos.html', datos=datos)
