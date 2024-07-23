@@ -1,15 +1,15 @@
 <nav class="navbar navbar-inverse bg-body-tertiary mi-nav">
+
     <div class="container-fluid">
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarTogglerDemo01" aria-controls="navbarTogglerDemo01" aria-expanded="false" aria-label="Toggle navigation">
-        <span class="navbar-toggler-icon"></span>
-    </button>
+        
     <div class="collapse navbar-collapse" id="navbarTogglerDemo01">
-        <a class="navbar-brand" href="#">Bar La Catrinas</a>
+        <!-- <img src="../static/img/logo.png" alt="logo" class="image-header"> -->
+        <a class="navbar-brand" href="{{url_for('index')}}">Bar La Catrina</a>
         <div class="navbar-nav me-auto mb-2 mb-lg-0">
             <a class="nav-link active" aria-current="page" href="#">Usuarios</a>
             <a class="nav-link active" aria-current="page" href="#">Mesas</a>
             <a class="nav-link disabled" aria-disabled="true" href="#">Ventas</a>
-            <a class="nav-link disabled" aria-disabled="true" href="#">Productos</a>
+            <a class="nav-link disabled" aria-disabled="true" href="{{url_for('productos')}}">Productos</a>
         </>
         <!-- <form class="d-flex" role="search">
         <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search">
