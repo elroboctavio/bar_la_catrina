@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+
+{% block title %} Login {% endblock %}
+
+
+    {% block content %}
+    <div class="position-absolute top-50 start-50 translate-middle">
+        <form action="/login" method="POST">
+            <h2 class="text-center">Bar la Catrina</h2>
+            <div class="mt-0">
+                <img src="{{ url_for('static', filename='img/logo.png') }}" class="img-fluid mx-auto d-block imagen-login" alt="logo">
+            </div>
+            <div class="mb-3">
+                <label for="usuario" class="form-label">Usuario</label>
+                <input type="text" class="form-control" id="usuario" name="usuario" required>
+            </div>
+            <div class="mb-3">
+                <label for="contraseña" class="form-label">Contraseña</label>
+                <input type="password" class="form-control" id="contraseña" name="contraseña" required>
+            </div>
+            <div id="passwordHelpBlock" class="form-text text-white mb-2">
+                Su contraseña debe tener entre 8 y 20 caracteres, contener letras y números, y no debe contener espacios,
+                caracteres especiales ni emojis.
+            </div>
+            <div class="d-grid gap-2">
+                <button type="submit" class="btn btn-primary">Iniciar sesión</button>
+            </div>
+        </form>
+    </div>
+    {% endblock %}
+

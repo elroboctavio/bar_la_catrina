@@ -24,14 +24,21 @@
     <h2>Listado de Productos</h2>
     <div class="container-fluid top-50 start-50 ">
         <div class="row">
-            {% for fila in datos %}
+            {% for fila in prod %}
             <div class="col-sm-4 mb-3">
                 <div class="card" style="width: 18rem;">
-                    <img src="{{ fila[0] }}" class="card-img-top imagen_card" alt="...">
+                    <img src="{{ fila[1] }}" class="card-img-top imagen_card" alt="...">
                     <div class="card-body">
-                        <h5 class="card-title">{{ fila[0] }} {{ fila[1] }}</h5>
-                        <p class="card-text">{{ fila[2] }}</p>
-                        <a href="#" class="btn btn-primary">Ver más</a>
+                        <h5 class="card-title">{{ fila[2] }}</h5>
+                        <p class="card-text">{{ fila[8] }}</p>
+                        <p class="card-text">${{ fila[3] }}</p>
+                        {% if fila[4] is not none %}
+                        <p>Contenido: {{ fila[4] }}</p>
+                        {% endif %}
+                        {% if fila[5] is not none %}
+                        <p class="card-text">{{ fila[5] }} piezas</p>
+                        {% endif %}
+                        <a href="{{ url_for('ver_producto', producto_id=fila[0]) }}" class="btn btn-primary">Ver más</a>
                     </div>
                 </div>
             </div>

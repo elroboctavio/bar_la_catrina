@@ -1,0 +1,96 @@
+{%extends 'base.html'%}
+{%block head%}
+    {{super()}}
+    <link rel="stylesheet" href="../static/style/style.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <title>
+    
+        {%block title%}
+        Productos
+        {%endblock%}
+    </title>
+    <!-- <link rel="stylesheet" href="../static/style/style.css"> -->
+{%endblock%}
+
+
+{%block body%}
+<body class="bg-dark text-white">
+    {%block navbar%}
+        {%include 'navbar.html'%}
+    {%endblock%}
+    
+    
+
+
+    {%block content%}
+    <h2>Añadir Producto</h2>
+        <form method="POST" enctype="multipart/form-data">
+            <label for="img">Imagen:</label>
+            <input type="file" name="img" required><br>
+        
+            <label for="nombre">Nombre:</label>
+            <input type="text" name="nombre" pattern="[A-Za-z0-9\s]+" title="Solo se permiten letras, números y espacios" required><br>
+        
+            <label for="precio_u">Precio:</label>
+            <input type="number" name="precio_u" step="0.5" required><br>
+        
+            <label for="fk_cat">Categoría:</label>
+            <select name="fk_cat" required>
+                <option value="1">Tritón 3L</option>
+                <option value="2">Tritón 5L</option>
+                <option value="3">Camaroneras</option>
+                <option value="4">Cerveza</option>
+                <option value="5">Chelada</option>
+                <option value="6">Michelada</option>
+                <option value="7">Caguamones</option>
+                <option value="8">Venenosas</option>
+                <option value="9">De la Casa</option>
+                <option value="10">Sin Alcohol</option>
+                <option value="11">Litros</option>
+                <option value="12">Whisky</option>
+                <option value="13">Vodka</option>
+                <option value="14">Tequila</option>
+                <option value="15">Brandy</option>
+                <option value="16">Mezcal</option>
+                <option value="17">Ron</option>
+                <option value="18">Bebidas Selectas</option>
+                <!-- Agrega más opciones según sea necesario -->
+            </select><br>
+            
+            <label for="contenido">Contenido:</label>
+            <select name="contenido" required>
+                <option value="500ml">500ml</option>
+                <option value="1L">1L</option>
+                <option value="copa">Copa</option>
+                <option value="botella">Botella</option>
+                <option value="">No aplica</option>
+
+                <!-- Agrega más opciones según sea necesario -->
+            </select><br>
+
+            <label for="stock">Cantidad de Stock:</label>
+            <input type="number" name="stock"><br>
+        
+            <label for="marca">Marca:</label>
+            <input type="text" name="marca" pattern="[A-Za-z0-9\s]+" title="Solo se permiten letras, números y espacios"><br>
+        
+            <label for="cod_barras">Código de Barras:</label>
+            <input type="text" name="cod_barras" pattern="\d+" title="Solo se permiten números"><br>
+        
+            <input type="submit" value="Añadir Producto">
+        </form>
+
+
+        {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            {% for message in messages %}
+            <div class="alert alert-primary .alert-dismissible" role="alert">
+                <strong>{{ message }}</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+    {%endblock%}
+</body>
+{%endblock%}
