@@ -139,13 +139,20 @@ def registrar_producto():
 
 @app.route('/ver_productos')
 def ver_productos():
+    search_query = request.args.get('search', '')
     conn = db.conectar()
     cursor = conn.cursor()
-    cursor.execute('''SELECT * FROM perfil_producto''')
+    if search_query:
+        cursor.execute('''SELECT * FROM perfil_producto WHERE "Nombre" ILIKE %s OR "Categoria" ILIKE %s''', ('%' + search_query + '%', '%' + search_query + '%'))
+    else:
+        cursor.execute('''SELECT * FROM perfil_producto''')
     prod = cursor.fetchall()
     cursor.close()
     db.desconectar(conn)
     return render_template('ver_productos.html', prod=prod)
+
+
+
 
 
 @app.route('/producto/<int:producto_id>')
@@ -157,3 +164,46 @@ def ver_producto(producto_id):
     cursor.close()
     db.desconectar(conn)
     return render_template('perfil_producto.html', producto=producto)
+
+@app.route('/editar_producto/<int:producto_id>', methods=['GET', 'POST'])
+def editar_producto(producto_id):
+    conn = db.conectar()
+    cursor = conn.cursor()
+    cursor.execute('''SELECT * FROM perfil_producto WHERE "ID" = %s;''', (producto_id,))
+    producto = cursor.fetchone()
+    if request.method == 'POST':
+        nombre = request.form['nombre']
+        precio_u = request.form['precio_u']
+        fk_cat = request.form['fk_cat']
+        contenido = request.form['contenido'] or None
+        stock = request.form['stock'] or None
+        marca = request.form['marca']
+        cod_barras = request.form['cod_barras']
+        cursor.execute('''UPDATE public.productos SET nombre=%s, precio_u=%s, fk_cat=%s, contenido=%s, stock=%s, marca=%s, cod_barras=%s WHERE "ID"=%s''',
+            (nombre,
+            precio_u,
+            fk_cat,
+            contenido,
+            stock,
+            marca,
+            cod_barras,
+            producto_id))
+        conn.commit()
+        cursor.close()
+        db.desconectar(conn)
+        flash('Producto actualizado exitosamente!')
+        return redirect(url_for('ver_productos'))
+    cursor.close()
+    db.desconectar(conn)
+    return render_template('editar_producto.html', producto=producto)
+
+@app.route('/eliminar_producto/<int:producto_id>', methods=['POST'])
+def eliminar_producto(producto_id):
+    conn = db.conectar()
+    cursor = conn.cursor()
+    cursor.execute('''DELETE FROM public.productos WHERE "id_prod" = %s;''', (producto_id,))
+    conn.commit()
+    cursor.close()
+    db.desconectar(conn)
+    flash('Producto eliminado exitosamente!')
+    return redirect(url_for('ver_productos'))

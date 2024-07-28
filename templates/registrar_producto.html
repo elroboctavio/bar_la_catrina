@@ -23,6 +23,11 @@
 
 
     {%block content%}
+    <button type="button" class="btn btn-warning" onclick="window.history.back()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-left" viewBox="0 0 16 16">
+            <path fill-rule="evenodd" d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8"/>
+        </svg> Regresar
+    </button>
     <h2>Añadir Producto</h2>
         <form method="POST" enctype="multipart/form-data">
             <label for="img">Imagen:</label>
@@ -81,7 +86,7 @@
         </form>
 
 
-        {% with messages = get_flashed_messages() %}
+    {% with messages = get_flashed_messages() %}
         {% if messages %}
             {% for message in messages %}
             <div class="alert alert-primary .alert-dismissible" role="alert">
