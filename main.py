@@ -87,8 +87,8 @@ def registrar_producto():
         fk_cat = request.form["fk_cat"]
         contenido = request.form["contenido"] or None
         stock = request.form["stock"] or None
-        marca = request.form["marca"].title()
-        cod_barras = request.form["cod_barras"]
+        marca = request.form["marca"].title()or None
+        cod_barras = request.form["cod_barras"]or None
         conn = db.conectar()
         cursor = conn.cursor()
         # Verificar si el código de barras ya está registrado
@@ -145,17 +145,14 @@ def ver_productos():
     if search_query:
         cursor.execute('''SELECT * FROM perfil_producto WHERE "Nombre" ILIKE %s OR "Categoria" ILIKE %s''', ('%' + search_query + '%', '%' + search_query + '%'))
     else:
-        cursor.execute('''SELECT * FROM perfil_producto''')
+        cursor.execute('''SELECT * FROM perfil_producto ORDER BY "ID" ASC ''')
     prod = cursor.fetchall()
     cursor.close()
     db.desconectar(conn)
     return render_template('ver_productos.html', prod=prod)
 
 
-
-
-
-@app.route('/producto/<int:producto_id>')
+@app.route('/ver_productos/<int:producto_id>')
 def ver_producto(producto_id):
     conn = db.conectar()
     cursor = conn.cursor()
@@ -165,37 +162,71 @@ def ver_producto(producto_id):
     db.desconectar(conn)
     return render_template('perfil_producto.html', producto=producto)
 
+
+
+
+
 @app.route('/editar_producto/<int:producto_id>', methods=['GET', 'POST'])
 def editar_producto(producto_id):
     conn = db.conectar()
     cursor = conn.cursor()
     cursor.execute('''SELECT * FROM perfil_producto WHERE "ID" = %s;''', (producto_id,))
     producto = cursor.fetchone()
+    
     if request.method == 'POST':
-        nombre = request.form['nombre']
+        img = request.files["img"]
+        nombre = request.form['nombre'].title()
         precio_u = request.form['precio_u']
         fk_cat = request.form['fk_cat']
         contenido = request.form['contenido'] or None
         stock = request.form['stock'] or None
-        marca = request.form['marca']
+        marca = request.form['marca'].title()
         cod_barras = request.form['cod_barras']
-        cursor.execute('''UPDATE public.productos SET nombre=%s, precio_u=%s, fk_cat=%s, contenido=%s, stock=%s, marca=%s, cod_barras=%s WHERE "ID"=%s''',
-            (nombre,
-            precio_u,
-            fk_cat,
-            contenido,
-            stock,
-            marca,
-            cod_barras,
-            producto_id))
-        conn.commit()
-        cursor.close()
-        db.desconectar(conn)
-        flash('Producto actualizado exitosamente!')
+        
+        # Verificar si el código de barras ya existe en otro producto
+        cursor.execute('''SELECT * FROM public.productos WHERE cod_barras = %s AND id_prod != %s''', (cod_barras, producto_id))
+        existing_product = cursor.fetchone()
+        
+        if existing_product:
+            flash("El producto con este código de barras ya está registrado.", 'danger')
+            cursor.close()
+            db.desconectar(conn)
+            return redirect(url_for('editar_producto', producto_id=producto_id))
+        
+        try:
+            # Manejo de la imagen
+            if img and allowed_file(img.filename):
+                filename = secure_filename(img.filename)
+                if not os.path.exists(app.config["UPLOAD_FOLDER"]):
+                    os.makedirs(app.config["UPLOAD_FOLDER"])
+                img.save(os.path.join(app.config["UPLOAD_FOLDER"], filename))
+                img_url = url_for("static", filename="uploads/" + filename)
+                cursor.execute('''UPDATE public.productos SET img=%s WHERE id_prod=%s''', (img_url, producto_id))
+            
+            cursor.execute('''UPDATE public.productos SET nombre=%s, precio_u=%s, fk_cat=%s, contenido=%s, stock=%s, marca=%s, cod_barras=%s WHERE id_prod=%s''',
+                (nombre, precio_u, fk_cat, contenido, stock, marca, cod_barras, producto_id))
+            conn.commit()
+            flash('Producto actualizado exitosamente!', 'success')
+        except (psycopg2.DatabaseError, IOError) as e:
+            flash('Error al actualizar el producto: ' + str(e), 'danger')
+        finally:
+            cursor.close()
+            db.desconectar(conn)
+        
         return redirect(url_for('ver_productos'))
+    
     cursor.close()
     db.desconectar(conn)
     return render_template('editar_producto.html', producto=producto)
+
+
+
+
+
+
+
+
+
 
 @app.route('/eliminar_producto/<int:producto_id>', methods=['POST'])
 def eliminar_producto(producto_id):

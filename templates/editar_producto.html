@@ -1,41 +1,133 @@
-{%extends 'base.html'%}
-{%block head%}
-    {{super()}}
+{% extends 'base.html' %}
+{% block head %}
+    {{ super() }}
     <link rel="stylesheet" href="../static/style/style.css">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-kenU1KFdBIe4zVF0s0G1M5b4hcpxyD9F7jL+Gx0f4b5EY1L1p4s1w1q+8nbTov4+" crossorigin="anonymous"></script>
     <title>
-        {%block title%}
-        Productos
-        {%endblock%}
+        {% block title %}
+        Editar Producto
+        {% endblock %}
     </title>
-    <!-- <link rel="stylesheet" href="../static/style/style.css"> -->
-{%endblock%}
+{% endblock %}
 
-
-{%block body%}
+{% block body %}
 <body class="bg-dark text-white">
-    {%block navbar%}
-        {%include 'navbar.html'%}
-    {%endblock%}
-
-        
-
-    {% block content %}
-    <h2>Listado de Productos</h2>
-    <h2>Editar Producto</h2>
-    <form method="POST">
-        <div class="mb-3">
-            <label for="nombre" class="form-label">Nombre</label>
-            <input type="text" class="form-control" id="nombre" name="nombre" value="{{ producto[2] }}">
-        </div>
-        <div class="mb-3">
-            <label for="precio_u" class="form-label">Precio</label>
-            <input type="text" class="form-control" id="precio_u" name="precio_u" value="{{ producto[3] }}">
-        </div>
-        <!-- Agrega los demás campos aquí -->
-        <button type="submit" class="btn btn-primary">Guardar Cambios</button>
-    </form>
+    {% block navbar %}
+        {% include 'navbar.html' %}
     {% endblock %}
 
+    {% block content %}
+<button type="button" class="btn btn-warning" onclick="window.history.back()">
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-left" viewBox="0 0 16 16">
+        <path fill-rule="evenodd" d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8"/>
+    </svg> Regresar
+</button>
+<h2>Editar Producto</h2>
+{% with messages = get_flashed_messages() %}
+    {% if messages %}
+        {% for message in messages %}
+        <div class="alert alert-primary alert-dismissible" role="alert">
+            <strong>{{ message }}</strong>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+<form method="POST" enctype="multipart/form-data" id="editForm">
+    <div class="mb-3">
+        <label for="img" class="form-label">Imagen Actual</label><br>
+        <img src="{{ producto[1] }}" alt="Imagen del Producto" class="img-thumbnail" width="150"><br>
+        <label for="img" class="form-label">Cambiar Imagen</label>
+        <input type="file" class="form-control" id="img" name="img">
+    </div>
+    <div class="mb-3">
+        <label for="nombre" class="form-label">Nombre</label>
+        <input type="text" class="form-control" id="nombre" name="nombre" value="{{ producto[2] }}" required>
+    </div>
+    <div class="mb-3">
+        <label for="precio_u" class="form-label">Precio</label>
+        <input type="number" class="form-control" id="precio_u" name="precio_u" step="0.5" value="{{ producto[3] }}" required>
+    </div>
+    <div class="mb-3">
+        <label for="fk_cat" class="form-label">Categoría</label>
+        <select class="form-control" id="fk_cat" name="fk_cat" required>
+            <option value="1" {% if producto[8] == 'Tritón 3L' %}selected{% endif %}>Tritón 3L</option>
+            <option value="2" {% if producto[8] == 'Tritón 5L' %}selected{% endif %}>Tritón 5L</option>
+            <option value="3" {% if producto[8] == 'Camaroneras' %}selected{% endif %}>Camaroneras</option>
+            <option value="4" {% if producto[8] == 'Cerveza' %}selected{% endif %}>Cerveza</option>
+            <option value="5" {% if producto[8] == 'Chelada' %}selected{% endif %}>Chelada</option>
+            <option value="6" {% if producto[8] == 'Michelada' %}selected{% endif %}>Michelada</option>
+            <option value="7" {% if producto[8] == 'Caguamones' %}selected{% endif %}>Caguamones</option>
+            <option value="8" {% if producto[8] == 'Venenosas' %}selected{% endif %}>Venenosas</option>
+            <option value="9" {% if producto[8] == 'De la casa' %}selected{% endif %}>De la Casa</option>
+            <option value="10" {% if producto[8] == 'Sin Alcohol' %}selected{% endif %}>Sin Alcohol</option>
+            <option value="11" {% if producto[8] == 'Litros' %}selected{% endif %}>Litros</option>
+            <option value="12" {% if producto[8] == 'Whisky' %}selected{% endif %}>Whisky</option>
+            <option value="13" {% if producto[8] == 'Vodka' %}selected{% endif %}>Vodka</option>
+            <option value="14" {% if producto[8] == 'Tequila' %}selected{% endif %}>Tequila</option>
+            <option value="15" {% if producto[8] == 'Brandy' %}selected{% endif %}>Brandy</option>
+            <option value="16" {% if producto[8] == 'Mezcal' %}selected{% endif %}>Mezcal</option>
+            <option value="17" {% if producto[8] == 'Ron' %}selected{% endif %}>Ron</option>
+            <option value="18" {% if producto[8] == 'Bebidas Selectas' %}selected{% endif %}>Bebidas Selectas</option>
+            <!-- Agrega más opciones según sea necesario -->
+        </select>
+    </div>
+    
+    <div class="mb-3">
+        <label for="contenido" class="form-label">Contenido</label>
+        <select class="form-control" id="contenido" name="contenido" required>
+            <option value="500ml" {% if producto[4] == '500ml' %}selected{% endif %}>500ml</option>
+            <option value="1L" {% if producto[4] == '1L' %}selected{% endif %}>1L</option>
+            <option value="copa" {% if producto[4] == 'copa' %}selected{% endif %}>Copa</option>
+            <option value="botella" {% if producto[4] == 'botella' %}selected{% endif %}>Botella</option>
+            <option value="" {% if producto[4] == none %}selected{% endif %}>No aplica</option>
+            <!-- Agrega más opciones según sea necesario -->
+        </select>
+    </div>
+    <div class="mb-3">
+        <label for="stock" class="form-label">Cantidad de Stock</label>
+        <input type="number" class="form-control" id="stock" name="stock" value="{{ producto[5] }}">
+    </div>
+    <div class="mb-3">
+        <label for="marca" class="form-label">Marca</label>
+        <input type="text" class="form-control" id="marca" name="marca" value="{{ producto[6] }}">
+    </div>
+    <div class="mb-3">
+        <label for="cod_barras" class="form-label">Código de Barras</label>
+        <input type="text" class="form-control" id="cod_barras" name="cod_barras" value="{{ producto[7] }}">
+    </div>
+    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#editModal">Guardar Cambios</button>
+</form>
+
+<!-- Modal de Confirmación de Edición -->
+<div class="modal fade" id="editModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content bg-dark text-white">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="editModalLabel">Confirmar Edición</h1>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                ¿Estás seguro de que deseas editar este producto?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="confirmEdit">Confirmar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.getElementById('confirmEdit').addEventListener('click', function () {
+        document.getElementById('editForm').submit();
+    });
+</script>
+
+
+{% endblock %}
+
 </body>
-{%endblock%}
+{% endblock %}
