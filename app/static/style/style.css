@@ -23,4 +23,12 @@
     height: 7%;
     width: 7%;
 } 
-    
+
+
+
+.active>.page-link, .page-link.active {
+    z-index: 3;
+    color: var(--bs-pagination-active-color);
+    background-color: rgb(255, 170, 0);
+    border-color: rgb(255, 170, 0);
+}
