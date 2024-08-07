@@ -1,7 +1,7 @@
 <nav class="navbar bg-body-tertiary bg-dark border-bottom border-body navbar-expand-lg" data-bs-theme="dark">
 <div class="container-fluid">
     <a class="navbar-brand" href="#">
-    <img src="../static/img/logo.png" alt="Bootstrap" class="imagen-logo_min">
+    <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Bootstrap" class="imagen-logo_min">
     Bar la Catrina
     </a>
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
@@ -33,7 +33,7 @@
             </a>
             <ul class="dropdown-menu">
                 <li><a class="dropdown-item" href="#">Ver Perfil</a></li>
-                <li><a class="dropdown-item" href="{{url_for('login')}}">Cerrar Sesión</a></li>
+                <li><a class="dropdown-item" href="# |">Cerrar Sesión</a></li>
             </ul>
             </li>
         </ul>

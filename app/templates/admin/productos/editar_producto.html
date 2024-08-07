@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+
 {% block head %}
     {{ super() }}
     <link rel="stylesheet" href="../static/style/style.css">
@@ -14,6 +15,7 @@
 
 {% block body %}
 <body class="bg-dark text-white">
+
     {% block navbar %}
         {% include 'navbar.html' %}
     {% endblock %}
@@ -28,7 +30,7 @@
 {% with messages = get_flashed_messages() %}
     {% if messages %}
         {% for message in messages %}
-        <div class="alert alert-primary alert-dismissible" role="alert">
+        <div class="alert alert-danger alert-dismissible" role="alert">
             <strong>{{ message }}</strong>
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>

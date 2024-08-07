@@ -1,4 +1,3 @@
-import psycopg2
 from psycopg2 import pool
 
 #Crear un pool de conexiones
@@ -16,3 +15,8 @@ def conectar():
 
 def desconectar(conn):
     connection_pool.putconn(conn)
+
+def get_db():
+    conn = conectar()
+    cursor = conn.cursor()
+    return conn, cursor
