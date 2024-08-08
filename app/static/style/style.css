@@ -32,3 +32,8 @@
     background-color: rgb(255, 170, 0);
     border-color: rgb(255, 170, 0);
 }
+
+.input-group {
+    display: flex;
+    justify-content: flex-end;
+}

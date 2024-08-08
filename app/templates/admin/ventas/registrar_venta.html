@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registrar Venta</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body>
+    <div class="container">
+        <h1 class="mt-5">Registrar Venta</h1>
+        <form id="ventaForm" action="/finalizar" method="POST">
+            <div class="form-group">
+                <label for="buscarProducto">Buscar Producto</label>
+                <input type="text" class="form-control" id="buscarProducto" placeholder="Buscar producto por nombre o categoría">
+                <div id="listaProductos" class="mt-3"></div>
+            </div>
+            <div class="form-group">
+                <label for="forma_pago">Forma de Pago</label>
+                <select class="form-control" id="forma_pago" name="forma_pago" required>
+                    <option value="efectivo">Efectivo</option>
+                    <option value="tarjeta">Tarjeta</option>
+                    <option value="transferencia">Transferencia</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="fk_mesa">Mesa</label>
+                <input type="number" class="form-control" id="fk_mesa" name="fk_mesa" required>
+            </div>
+            <div class="form-group">
+                <label for="nombre_cliente">Nombre del Cliente</label>
+                <input type="text" class="form-control" id="nombre_cliente" name="nombre_cliente" required>
+            </div>
+            <input type="hidden" id="productos" name="productos">
+            <button type="submit" class="btn btn-primary">Finalizar Venta</button>
+        </form>
+    </div>
+
+    <script>
+        document.getElementById('buscarProducto').addEventListener('input', function() {
+            const termino = this.value;
+            fetch(`/buscar_productos?termino=${termino}`)
+                .then(response => response.json())
+                .then(data => {
+                    const listaProductos = document.getElementById('listaProductos');
+                    listaProductos.innerHTML = '';
+                    data.forEach(producto => {
+                        const card = document.createElement('div');
+                        card.className = 'card mb-3';
+                        card.innerHTML = `
+                            <div class="card-body">
+                                <h5 class="card-title">${producto.Nombre}</h5>
+                                <p class="card-text">Categoría: ${producto.Categoria}</p>
+                                <p class="card-text">Precio: ${producto.Precio}</p>
+                                <p class="card-text">Stock: ${producto.Stock}</p>
+                                <button class="btn btn-primary" onclick="añadirProducto(${producto.ID}, '${producto.Nombre}', ${producto.Precio})">Añadir</button>
+                            </div>
+                        `;
+                        listaProductos.appendChild(card);
+                    });
+                });
+        });
+
+        const productosSeleccionados = [];
+
+        function añadirProducto(id, nombre, precio) {
+            const producto = { idProducto: id, nombre: nombre, precio: precio, cantidad: 1, subtotal: precio };
+            productosSeleccionados.push(producto);
+            actualizarProductos();
+        }
+
+        function eliminarProducto(id) {
+            const index = productosSeleccionados.findIndex(p => p.idProducto === id);
+            if (index !== -1) {
+                productosSeleccionados.splice(index, 1);
+                actualizarProductos();
+            }
+        }
+
+        function actualizarProductos() {
+            const productosInput = document.getElementById('productos');
+            productosInput.value = JSON.stringify(productosSeleccionados);
+            const listaProductos = document.getElementById('listaProductos');
+            listaProductos.innerHTML = '';
+            productosSeleccionados.forEach(producto => {
+                const card = document.createElement('div');
+                card.className = 'card mb-3';
+                card.innerHTML = `
+                    <div class="card-body">
+                        <h5 class="card-title">${producto.nombre}</h5>
+                        <p class="card-text">Cantidad: ${producto.cantidad}</p>
+                        <p class="card-text">Subtotal: ${producto.subtotal}</p>
+                        <button class="btn btn-danger" onclick="eliminarProducto(${producto.idProducto})">Eliminar</button>
+                    </div>
+                `;
+                listaProductos.appendChild(card);
+            });
+        }
+    </script>
+</body>
+</html>

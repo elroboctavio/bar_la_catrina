@@ -20,3 +20,6 @@ def get_db():
     conn = conectar()
     cursor = conn.cursor()
     return conn, cursor
+
+
+

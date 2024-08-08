@@ -24,9 +24,24 @@
             <li class="nav-item">
             <a class="nav-link" href="#">Usuarios</a>
             </li>
-            <li class="nav-item">
-                <a class="nav-link" href="#">Ventas</a>
-                </li>
+            <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle nav-link" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    Ventas
+                </a>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="#">Ver Ventas</a></li>
+                    <li><a class="dropdown-item" href="{{url_for('registrar_venta')}}">Rgistrar Venta</a></li>
+                </ul>
+            </li>
+            <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle nav-link" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    Mesas
+                </a>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="{{url_for('ver_mesas')}}">Ver Mesas</a></li>
+                    <li><a class="dropdown-item" href="{{url_for('registrar_mesa')}}">Registrar Mesa</a></li>
+                </ul>
+            </li>
             <li class="nav-item dropdown">
             <a class="nav-link dropdown-toggle nav-link" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                 NombreUSR
