@@ -23,8 +23,15 @@
                     <li><a class="dropdown-item" href="{{url_for('registrar_categoria')}}">Registrar Categorias</a></li>
                 </ul>
             </li>
-            <li class="nav-item">
-            <a class="nav-link" href="#">Usuarios</a>
+            <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle nav-link" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    Usuarios
+                </a>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="{{url_for('ver_usuarios')}}">Ver Usuarios</a></li>
+                    <li><a class="dropdown-item" href="{{url_for('registrar_usuario')}}">Registrar Usuario</a></li>
+                    
+                </ul>
             </li>
             <li class="nav-item dropdown">
                 <a class="nav-link dropdown-toggle nav-link" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
