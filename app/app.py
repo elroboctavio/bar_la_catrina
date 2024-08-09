@@ -7,6 +7,7 @@ from wtforms.fields import PasswordField, StringField, SubmitField
 import db 
 from db import get_db, desconectar
 from werkzeug.utils import secure_filename
+from werkzeug.security import generate_password_hash, check_password_hash
 import math
 from psycopg2.extras import RealDictCursor
 import json
@@ -63,6 +64,138 @@ def index():
 # def logout():
 #     # remove the username from the session if it's there
 #     session.pop('usuario', None)
+
+
+
+
+
+
+
+# Ejemplo de verificación de contraseña
+# stored_password_hash = "hash_almacenado_en_la_base_de_datos"
+# input_password = "contraseña_introducida_por_el_usuario"
+
+# if check_password_hash(stored_password_hash, input_password):
+#     print("Contraseña correcta")
+# else:
+#     print("Contraseña incorrecta")
+
+
+
+
+
+# ----------------CRUD DE USUARIOS----------------
+# ----------------REGISTRAR DE USUARIOS----------------
+
+@app.route("/usuarios/registrar_usuario", methods=["GET", "POST"])
+def registrar_usuario():
+    if request.method == "POST":
+        img = request.files["img"]
+        nombre = request.form["nombre"].title()
+        ap_pat = request.form["ap_pat"].title()
+        ap_mat = request.form["ap_mat"].title()
+        usuario = request.form["usuario"]
+        contraseña = request.form["contraseña"]
+        rol = request.form["rol"]
+        f_nacimiento = request.form["f_nacimiento"]
+        telefono = request.form["telefono"]
+        direccion = request.form["direccion"]
+
+        # Hashear la contraseña
+        hashed_password = generate_password_hash(contraseña)
+
+        conn = db.conectar()
+        cursor = conn.cursor()
+
+        if img and allowed_file(img.filename):
+            filename = secure_filename(img.filename)
+            if not os.path.exists(app.config["UPLOAD_FOLDER"]):
+                os.makedirs(app.config["UPLOAD_FOLDER"])
+            img.save(os.path.join(app.config["UPLOAD_FOLDER"], filename))
+            img_url = url_for("static", filename="uploads/" + filename)
+
+            cursor.execute(
+                "INSERT INTO public.usuario (img, nombre, ap_pat, ap_mat, usuario, contraseña, rol, f_nacimiento, telefono, direccion) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
+                (img_url, nombre, ap_pat, ap_mat, usuario, hashed_password, rol, f_nacimiento, telefono, direccion),
+            )
+            conn.commit()
+            flash("Usuario registrado exitosamente!")
+        else:
+            flash("Los únicos formatos permitidos para la imagen son - png, jpg, jpeg, gif")
+
+        cursor.close()
+        conn.close()
+        return redirect(url_for("registrar_usuario"))
+
+    return render_template("admin/usuarios/registrar_usuario.html")
+
+
+# ----------------VER DE USUARIOS----------------
+@app.route('/usuarios', methods=['GET'])
+def ver_usuarios():
+    conn = db.conectar()
+    cursor = conn.cursor(cursor_factory=RealDictCursor)
+    cursor.execute("SELECT * FROM public.usuario ORDER BY id_usuario ASC")
+    usuarios = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return render_template('admin/usuarios/ver_usuarios.html', usuarios=usuarios)
+
+# ----------------EDITAR DE USUARIOS----------------
+@app.route('/usuarios/editar_usuario/<int:usuario_id>', methods=['GET', 'POST'])
+def editar_usuario(usuario_id):
+    conn = db.conectar()
+    cursor = conn.cursor(cursor_factory=RealDictCursor)
+    cursor.execute('''SELECT * FROM public.usuario WHERE id_usuario = %s;''', (usuario_id,))
+    usuario = cursor.fetchone()
+
+    if request.method == 'POST':
+        img = request.files["img"]
+        nombre = request.form["nombre"].title()
+        ap_pat = request.form["ap_pat"].title()
+        ap_mat = request.form["ap_mat"].title()
+        usuario_nombre = request.form["usuario"]
+        contraseña = request.form["contraseña"]
+        rol = request.form["rol"]
+        f_nacimiento = request.form["f_nacimiento"]
+        telefono = request.form["telefono"]
+        direccion = request.form["direccion"]
+
+        # Hashear la nueva contraseña si se proporciona
+        hashed_password = generate_password_hash(contraseña) if contraseña else usuario['contraseña']
+
+        if img and allowed_file(img.filename):
+            filename = secure_filename(img.filename)
+            if not os.path.exists(app.config["UPLOAD_FOLDER"]):
+                os.makedirs(app.config["UPLOAD_FOLDER"])
+            img.save(os.path.join(app.config["UPLOAD_FOLDER"], filename))
+            img_url = url_for("static", filename="uploads/" + filename)
+        else:
+            img_url = usuario['img']
+
+        cursor.execute(
+            '''UPDATE public.usuario SET img=%s, nombre=%s, ap_pat=%s, ap_mat=%s, usuario=%s, contraseña=%s, rol=%s, f_nacimiento=%s, telefono=%s, direccion=%s WHERE id_usuario=%s''',
+            (img_url, nombre, ap_pat, ap_mat, usuario_nombre, hashed_password, rol, f_nacimiento, telefono, direccion, usuario_id)
+        )
+        conn.commit()
+        flash('Usuario actualizado exitosamente!')
+        return redirect(url_for('ver_usuarios'))
+
+    cursor.close()
+    conn.close()
+    return render_template('admin/usuarios/editar_usuario.html', usuario=usuario)
+
+# ----------------ELIMINAR DE USUARIOS----------------
+@app.route('/usuarios/eliminar_usuario/<int:usuario_id>', methods=['POST'])
+def eliminar_usuario(usuario_id):
+    conn = db.conectar()
+    cursor = conn.cursor()
+    cursor.execute('''DELETE FROM public.usuario WHERE id_usuario = %s;''', (usuario_id,))
+    conn.commit()
+    cursor.close()
+    conn.close()
+    flash('Usuario eliminado exitosamente!')
+    return redirect(url_for('ver_usuarios'))
 
 
 
