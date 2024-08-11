@@ -2,13 +2,21 @@
     font-size: 22px;
 }
 
-.navbar-nav .nav-link {
+.navbar-nav .nav-link{
     display: inline-block;
     margin-left: 10px;
     margin-right: 20px;
     margin-top: 10px;
-    color:rgb(255, 170, 0);
+    color:rgb(255, 149, 0);
+    font-weight: bold;
 }
+
+/* .dropdown-item{
+    font-weight: bold;
+} */
+
+
+
 /* Image login */
 .imagen-login {
     height: 50%;
@@ -33,7 +41,22 @@
     border-color: rgb(255, 170, 0);
 }
 
-.input-group {
-    display: flex;
-    justify-content: flex-end;
+/* Asegúrate de que el dropdown no cause scroll horizontal */
+.navbar .dropdown-menu {
+    max-width: 100%;
+    overflow-x: hidden;
 }
+
+/* Ajustar el dropdown para que se adapte a la pantalla */
+.navbar .dropdown-menu {
+    left: auto;
+    right: 0;
+    transform: translateX(0);
+}
+
+/* Asegurar que el dropdown se muestre correctamente */
+.navbar .dropdown-menu {
+    white-space: nowrap;
+    text-align: left; /* Asegura que el texto esté alineado a la izquierda */
+}
+

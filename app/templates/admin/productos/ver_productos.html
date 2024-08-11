@@ -19,40 +19,40 @@
     {% endblock %}
 
     {% block content %}
-    <h2>Listado de Productos</h2>
+    <div class="container mt-3">
+        <h1 class="mb-4 text-center">Listado de Productos</h1>
 
-    <!-- Formulario de Búsqueda -->
-    <form method="GET" action="{{ url_for('ver_productos') }}" class="mb-3">
-        <div class="input-group mb-3">
-            <input type="text" class="form-control" name="search" placeholder="Buscar por nombre o categoría" value="{{ request.args.get('search', '') }}">
-            <button class="btn btn-primary" type="submit">Buscar</button>
-        </div>
-    </form>
-
-    <!-- Mostrar mensajes flash -->
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            {% for category, message in messages %}
-            <div class="alert alert-{{ category }} alert-success alert-dismissible fade show" role="alert">
-                <strong>{{ message }}</strong>
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        <!-- Formulario de Búsqueda -->
+        <form method="GET" action="{{ url_for('ver_productos') }}" class="mb-3">
+            <div class="input-group mb-3">
+                <input type="text" class="form-control" name="search" placeholder="Buscar por nombre o categoría" value="{{ request.args.get('search', '') }}">
+                <button class="btn btn-primary" type="submit">Buscar</button>
             </div>
-            {% endfor %}
-        {% endif %}
-    {% endwith %}
+        </form>
 
-    <div class="container-fluid top-50 start-50 ">
+        <!-- Mostrar mensajes flash -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-success alert-dismissible fade show" role="alert">
+                    <strong>{{ message }}</strong>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
         <div class="row">
             {% for fila in prod %}
-            <div class="col-sm-4 mb-3">
+            <div class="col-sm-12 col-md-6 col-lg-4 mb-3 d-flex justify-content-center">
                 <div class="card" style="width: 18rem;">
                     {% if fila['Imagen'] %}
                         <img src="{{fila['Imagen'] }}" class="card-img-top imagen_card" alt="...">
                     {% else %}
-                        <img src="{{ url_for('static', filename='uploads/default.png') }}" class="card-img-top imagen_card" alt="...">
+                        <img src="{{ url_for('static', filename='uploads/default_producto.png') }}" class="card-img-top imagen_card" alt="...">
                     {% endif %}
                     <div class="card-body">
-                        <h5 class="card-title">{{ fila['Nombre'] }}</h5>
+                        <h5 class="card-title text-center">{{ fila['Nombre'] }}</h5>
                         <p class="card-text">{{ fila['Categoria'] }}</p>
                         <p class="card-text">${{ fila['Precio'] }}</p>
                         {% if fila['Contenido'] is not none %}
@@ -62,16 +62,13 @@
                         <p class="card-text">{{ fila['Stock'] }} piezas</p>
                         {% endif %}
                         <a href="{{ url_for('ver_producto', producto_id=fila['ID']) }}" class="btn btn-primary">Ver más</a>
+                        {% if session['role'] == 'Administrador' %}
                         <a href="{{ url_for('editar_producto', producto_id=fila['ID']) }}" class="btn btn-warning">Editar</a>
                         <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#staticBackdrop" data-id="{{ fila['ID'] }}">Eliminar</button>
+                        {% endif %}
                     </div>
                 </div>
             </div>
-            
-            
-            {% if loop.index % 3 == 0 %}
-            </div><div class="row">
-            {% endif %}
             {% endfor %}
         </div>
     </div>

@@ -21,37 +21,40 @@
         
 
     {% block content %}
-    <button type="button" class="btn btn-warning" onclick="window.history.back()">
+    <button type="button" class="btn btn-warning mb-3" onclick="window.history.back()">
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-left" viewBox="0 0 16 16">
             <path fill-rule="evenodd" d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8"/>
         </svg> Regresar
     </button>
-    <h2>{{ producto[2] }}</h2>
+    <h1 class="text-center my-4">{{ producto[2] }}</h1>
     <div class="container">
         <div class="row">
             <div class="col-sm-6">
-                <img src="{{ producto[1] }}" class="img-fluid" alt="...">
+                <img src="{{ producto[1] }}" class="img-fluid rounded shadow" alt="...">
             </div>
             <div class="col-sm-6">
-                <p>Nombre: {{ producto[2] }}</p>
-                <p>Categoria: {{ producto[8] }}</p>
-                <p>Precio: ${{ producto[3] }}</p>
-                {% if producto[4] is not none %}
-                <p>Contenido: {{ producto[4] }}</p>
-                {% endif %}
-                {% if producto[5] is not none %}
-                <p>Stock: {{ producto[5] }} piezas</p>
-                {% endif %}
-                {% if producto[6] is not none %}
-                <p>Marca: {{ producto[6] }}</p>
-                {% endif %}
-                {% if producto[7] is not none %}
-                <p>Codigo de Barras: {{ producto[7] }}</p>
-                {% endif %}
+                <div class="card p-3 shadow">
+                    <p><strong>Nombre:</strong> {{ producto[2] }}</p>
+                    <p><strong>Categoria:</strong> {{ producto[8] }}</p>
+                    <p><strong>Precio:</strong> ${{ producto[3] }}</p>
+                    {% if producto[4] is not none %}
+                    <p><strong>Contenido:</strong> {{ producto[4] }}</p>
+                    {% endif %}
+                    {% if producto[5] is not none %}
+                    <p><strong>Stock:</strong> {{ producto[5] }} piezas</p>
+                    {% endif %}
+                    {% if producto[6] is not none %}
+                    <p><strong>Marca:</strong> {{ producto[6] }}</p>
+                    {% endif %}
+                    {% if producto[7] is not none %}
+                    <p><strong>Codigo de Barras:</strong> {{ producto[7] }}</p>
+                    {% endif %}
+                </div>
             </div>
         </div>
     </div>
 {% endblock %}
+
 
 </body>
 {%endblock%}

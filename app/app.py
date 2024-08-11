@@ -3,6 +3,8 @@ import psycopg2
 from flask import Flask, redirect, render_template, request, url_for, flash, get_flashed_messages, session, jsonify, json
 from flask_bootstrap import Bootstrap
 from flask_wtf import FlaskForm
+import forms
+from forms import LoginForm
 from wtforms.fields import PasswordField, StringField, SubmitField
 import db 
 from db import get_db, desconectar
@@ -11,6 +13,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 import math
 from psycopg2.extras import RealDictCursor
 import json
+from functools import wraps
 # from blueprints.auth import bp as auth_bp
 
 
@@ -24,16 +27,12 @@ ALLOWED_EXTENSIONS = set(['png', 'jpg', 'jpeg', 'gif'])
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
-# app.register_blueprint(auth_bp)
-
 #------------------------- Error Handlers -------------------------
 def pagina_no_encontrada(error):
     return render_template('error/404.html')
 
 def acceso_no_autorizado(error):
     return redirect(url_for('login'))
-
 
 
 if __name__ == '__main__':
@@ -44,32 +43,62 @@ if __name__ == '__main__':
     app.run(debug=True, port=5000)
 
 
+
+# ----------------DECORADORES DE AUTORIZACION----------------
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'user_id' not in session:
+            return redirect(url_for('login'))
+        return f(*args, **kwargs)
+    return decorated_function
+
+def admin_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if session.get('role') != 'Administrador':
+            flash('No tienes acceso a esta pagina.', 'danger')
+            return redirect(url_for('index'))
+        return f(*args, **kwargs)
+    return decorated_function
+
+# ----------------Index----------------
 @app.route('/')
+@login_required
 def index():
-    # if 'usuario' in session:
-    #     return render_template('home.html')
-    return render_template('auth/login.html')
-
-# @app.route('/login', methods=['GET', 'POST'])
-# def login():
-#     if request.method == 'POST':
-#         print(request.form['usuario'])
-#         print(request.form['contraseña'])
-#         session['usuario'] = request.form['usuario']
-#         return redirect(url_for('index'))
-#     else:
-#         return render_template('auth/login.html')
-
-# @app.route('/logout')
-# def logout():
-#     # remove the username from the session if it's there
-#     session.pop('usuario', None)
+    return render_template('index.html')
 
 
+# ----------------LOGIN----------------
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    form = LoginForm()
+    if form.validate_on_submit():
+        username = form.username.data
+        password = form.password.data
+        conn = db.conectar()
+        cursor = conn.cursor(cursor_factory=RealDictCursor)
+        cursor.execute("SELECT * FROM public.usuario WHERE usuario = %s", (username,))
+        user = cursor.fetchone()
+        cursor.close()
+        conn.close()
+        if user and check_password_hash(user['contraseña'], password):
+            session['user_id'] = user['id_usuario']
+            session['role'] = user['rol']
+            session['username'] = user['usuario']
+            flash('Inicio de Secion Correcto', 'success')
+            return redirect(url_for('index'))
+        else:
+            flash('Usuario o Contraseña Invalido', 'danger')
+    return render_template('auth/login.html', form=form)
 
-
-
-
+# ----------------LOGOUT----------------
+@app.route('/logout')
+def logout():
+    session.pop('user_id', None)
+    session.pop('role', None)
+    flash('Cierre de Sesion Exitoso', 'success')
+    return redirect(url_for('login'))
 
 # Ejemplo de verificación de contraseña
 # stored_password_hash = "hash_almacenado_en_la_base_de_datos"
@@ -80,121 +109,162 @@ def index():
 # else:
 #     print("Contraseña incorrecta")
 
-
-
-
-
 # ----------------CRUD DE USUARIOS----------------
 # ----------------REGISTRAR DE USUARIOS----------------
-
 @app.route("/usuarios/registrar_usuario", methods=["GET", "POST"])
+@login_required
+@admin_required
 def registrar_usuario():
     if request.method == "POST":
-        img = request.files["img"]
+        img = request.files.get("img")
         nombre = request.form["nombre"].title()
         ap_pat = request.form["ap_pat"].title()
         ap_mat = request.form["ap_mat"].title()
-        usuario = request.form["usuario"]
+        usuario = request.form["usuario"].lower()
         contraseña = request.form["contraseña"]
         rol = request.form["rol"]
         f_nacimiento = request.form["f_nacimiento"]
         telefono = request.form["telefono"]
-        direccion = request.form["direccion"]
+        direccion = request.form["direccion"].title()
 
-        # Hashear la contraseña
-        hashed_password = generate_password_hash(contraseña)
+        # Validaciones
+        if len(telefono) != 10 or not telefono.isdigit():
+            flash("El número de teléfono debe tener 10 dígitos.", "warning")
+            return render_template("admin/usuarios/registrar_usuario.html", nombre=nombre, ap_pat=ap_pat, ap_mat=ap_mat, usuario=usuario, rol=rol, f_nacimiento=f_nacimiento, telefono=telefono, direccion=direccion)
+
+        if len(contraseña) < 8:
+            flash("La contraseña debe tener al menos 8 caracteres.", "warning")
+            return render_template("admin/usuarios/registrar_usuario.html", nombre=nombre, ap_pat=ap_pat, ap_mat=ap_mat, usuario=usuario, rol=rol, f_nacimiento=f_nacimiento, telefono=telefono, direccion=direccion)
 
         conn = db.conectar()
         cursor = conn.cursor()
 
-        if img and allowed_file(img.filename):
-            filename = secure_filename(img.filename)
-            if not os.path.exists(app.config["UPLOAD_FOLDER"]):
-                os.makedirs(app.config["UPLOAD_FOLDER"])
-            img.save(os.path.join(app.config["UPLOAD_FOLDER"], filename))
-            img_url = url_for("static", filename="uploads/" + filename)
+        try:
+            # Verificar si el número de teléfono ya está registrado
+            cursor.execute("SELECT * FROM public.usuario WHERE telefono = %s", (telefono,))
+            if cursor.fetchone():
+                flash("El número de teléfono ya está registrado.", "warning")
+                return render_template("admin/usuarios/registrar_usuario.html", nombre=nombre, ap_pat=ap_pat, ap_mat=ap_mat, usuario=usuario, rol=rol, f_nacimiento=f_nacimiento, telefono=telefono, direccion=direccion)
+
+            # Verificar si el nombre de usuario ya está registrado
+            cursor.execute("SELECT * FROM public.usuario WHERE usuario = %s", (usuario,))
+            if cursor.fetchone():
+                flash("El nombre de usuario ya está registrado.", "warning")
+                return render_template("admin/usuarios/registrar_usuario.html", nombre=nombre, ap_pat=ap_pat, ap_mat=ap_mat, usuario=usuario, rol=rol, f_nacimiento=f_nacimiento, telefono=telefono, direccion=direccion)
+
+            # Hashear la contraseña
+            hashed_password = generate_password_hash(contraseña)
+
+            if img:
+                if allowed_file(img.filename):
+                    filename = secure_filename(img.filename)
+                    if not os.path.exists(app.config["UPLOAD_FOLDER"]):
+                        os.makedirs(app.config["UPLOAD_FOLDER"])
+                    img.save(os.path.join(app.config["UPLOAD_FOLDER"], filename))
+                    img_url = url_for("static", filename="uploads/" + filename)
+                else:
+                    flash("Los únicos formatos permitidos para la imagen son - png, jpg, jpeg, gif", "warning")
+                    return render_template("admin/usuarios/registrar_usuario.html", nombre=nombre, ap_pat=ap_pat, ap_mat=ap_mat, usuario=usuario, rol=rol, f_nacimiento=f_nacimiento, telefono=telefono, direccion=direccion)
+            else:
+                # Usa una imagen por defecto si no se sube ninguna
+                img_url = url_for("static", filename="uploads/default_usuario.png")
 
             cursor.execute(
                 "INSERT INTO public.usuario (img, nombre, ap_pat, ap_mat, usuario, contraseña, rol, f_nacimiento, telefono, direccion) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
                 (img_url, nombre, ap_pat, ap_mat, usuario, hashed_password, rol, f_nacimiento, telefono, direccion),
             )
             conn.commit()
-            flash("Usuario registrado exitosamente!")
-        else:
-            flash("Los únicos formatos permitidos para la imagen son - png, jpg, jpeg, gif")
+            flash("¡Usuario registrado exitosamente!", "success")
+            return redirect(url_for("ver_usuarios"))
 
-        cursor.close()
-        conn.close()
-        return redirect(url_for("registrar_usuario"))
+        finally:
+            cursor.close()
+            conn.close()
 
     return render_template("admin/usuarios/registrar_usuario.html")
 
-
 # ----------------VER DE USUARIOS----------------
 @app.route('/usuarios', methods=['GET'])
+@login_required
+@admin_required
 def ver_usuarios():
     conn = db.conectar()
     cursor = conn.cursor(cursor_factory=RealDictCursor)
-    cursor.execute("SELECT * FROM public.usuario ORDER BY id_usuario ASC")
-    usuarios = cursor.fetchall()
-    cursor.close()
-    conn.close()
+    try:
+        cursor.execute("""SELECT id_usuario, img, nombre, ap_pat, ap_mat, usuario, rol, f_nacimiento, telefono, direccion, 
+        CAST(DATE_PART('year', AGE(f_nacimiento)) AS INTEGER) AS edad
+        FROM public.usuario 
+        ORDER BY id_usuario ASC;""")
+        usuarios = cursor.fetchall()
+    finally:
+        cursor.close()
+        conn.close()
     return render_template('admin/usuarios/ver_usuarios.html', usuarios=usuarios)
+
 
 # ----------------EDITAR DE USUARIOS----------------
 @app.route('/usuarios/editar_usuario/<int:usuario_id>', methods=['GET', 'POST'])
+@login_required
+@admin_required
 def editar_usuario(usuario_id):
     conn = db.conectar()
     cursor = conn.cursor(cursor_factory=RealDictCursor)
-    cursor.execute('''SELECT * FROM public.usuario WHERE id_usuario = %s;''', (usuario_id,))
-    usuario = cursor.fetchone()
+    try:
+        cursor.execute('''SELECT * FROM public.usuario WHERE id_usuario = %s;''', (usuario_id,))
+        usuario = cursor.fetchone()
 
-    if request.method == 'POST':
-        img = request.files["img"]
-        nombre = request.form["nombre"].title()
-        ap_pat = request.form["ap_pat"].title()
-        ap_mat = request.form["ap_mat"].title()
-        usuario_nombre = request.form["usuario"]
-        contraseña = request.form["contraseña"]
-        rol = request.form["rol"]
-        f_nacimiento = request.form["f_nacimiento"]
-        telefono = request.form["telefono"]
-        direccion = request.form["direccion"]
+        if request.method == 'POST':
+            img = request.files["img"]
+            nombre = request.form["nombre"].title()
+            ap_pat = request.form["ap_pat"].title()
+            ap_mat = request.form["ap_mat"].title()
+            usuario_nombre = request.form["usuario"]
+            contraseña = request.form["contraseña"]
+            rol = request.form["rol"]
+            f_nacimiento = request.form["f_nacimiento"]
+            telefono = request.form["telefono"]
+            direccion = request.form["direccion"]
 
-        # Hashear la nueva contraseña si se proporciona
-        hashed_password = generate_password_hash(contraseña) if contraseña else usuario['contraseña']
+            # Hashear la nueva contraseña si se proporciona
+            hashed_password = generate_password_hash(contraseña) if contraseña else usuario['contraseña']
 
-        if img and allowed_file(img.filename):
-            filename = secure_filename(img.filename)
-            if not os.path.exists(app.config["UPLOAD_FOLDER"]):
-                os.makedirs(app.config["UPLOAD_FOLDER"])
-            img.save(os.path.join(app.config["UPLOAD_FOLDER"], filename))
-            img_url = url_for("static", filename="uploads/" + filename)
-        else:
-            img_url = usuario['img']
+            if img and allowed_file(img.filename):
+                filename = secure_filename(img.filename)
+                if not os.path.exists(app.config["UPLOAD_FOLDER"]):
+                    os.makedirs(app.config["UPLOAD_FOLDER"])
+                img.save(os.path.join(app.config["UPLOAD_FOLDER"], filename))
+                img_url = url_for("static", filename="uploads/" + filename)
+            else:
+                img_url = usuario['img']
 
-        cursor.execute(
-            '''UPDATE public.usuario SET img=%s, nombre=%s, ap_pat=%s, ap_mat=%s, usuario=%s, contraseña=%s, rol=%s, f_nacimiento=%s, telefono=%s, direccion=%s WHERE id_usuario=%s''',
-            (img_url, nombre, ap_pat, ap_mat, usuario_nombre, hashed_password, rol, f_nacimiento, telefono, direccion, usuario_id)
-        )
-        conn.commit()
-        flash('Usuario actualizado exitosamente!')
-        return redirect(url_for('ver_usuarios'))
+            cursor.execute(
+                '''UPDATE public.usuario SET img=%s, nombre=%s, ap_pat=%s, ap_mat=%s, usuario=%s, contraseña=%s, rol=%s, f_nacimiento=%s, telefono=%s, direccion=%s WHERE id_usuario=%s''',
+                (img_url, nombre, ap_pat, ap_mat, usuario_nombre, hashed_password, rol, f_nacimiento, telefono, direccion, usuario_id)
+            )
+            conn.commit()
+            flash('Usuario actualizado exitosamente!', "success")
+            return redirect(url_for('ver_usuarios'))
+    finally:
+        cursor.close()
+        conn.close()
 
-    cursor.close()
-    conn.close()
     return render_template('admin/usuarios/editar_usuario.html', usuario=usuario)
+
 
 # ----------------ELIMINAR DE USUARIOS----------------
 @app.route('/usuarios/eliminar_usuario/<int:usuario_id>', methods=['POST'])
+@login_required
+@admin_required
 def eliminar_usuario(usuario_id):
     conn = db.conectar()
     cursor = conn.cursor()
-    cursor.execute('''DELETE FROM public.usuario WHERE id_usuario = %s;''', (usuario_id,))
-    conn.commit()
-    cursor.close()
-    conn.close()
-    flash('Usuario eliminado exitosamente!')
+    try:
+        cursor.execute('''DELETE FROM public.usuario WHERE id_usuario = %s;''', (usuario_id,))
+        conn.commit()
+        flash('Usuario eliminado exitosamente!', "success")
+    finally:
+        cursor.close()
+        conn.close()
     return redirect(url_for('ver_usuarios'))
 
 
@@ -209,61 +279,76 @@ def paginador(sql_count, sql_lim, in_page, per_pages, search_param):
     conn = db.conectar()
     cursor = conn.cursor(cursor_factory=RealDictCursor)
     
-    cursor.execute(sql_count, (search_param, search_param))
-    total_items = cursor.fetchone()['count']
+    try:
+        cursor.execute(sql_count, (search_param, search_param))
+        total_items = cursor.fetchone()['count']
 
-    cursor.execute(sql_lim, (search_param, search_param, per_page, offset))
-    items = cursor.fetchall()
+        cursor.execute(sql_lim, (search_param, search_param, per_page, offset))
+        items = cursor.fetchall()
 
-    # Asegúrate de que 'Imagen' no sea None
-    for item in items:
-        if item['Imagen'] is None:
-            item['Imagen'] = 'default.png'
-
-    cursor.close()
-    conn.close()
+        # Asegúrate de que 'Imagen' no sea None
+        for item in items:
+            if item['Imagen'] is None:
+                item['Imagen'] = 'default.png'
+    finally:
+        cursor.close()
+        db.desconectar(conn)
 
     total_pages = (total_items + per_page - 1) // per_page
 
     return items, page, per_page, total_items, total_pages
 
-
-
-
-
 # ----------------CRUD DE PRODUCTOS----------------
 # ----------------REGISTRAR DE PRODUCTOS----------------
 @app.route("/productos/registrar_producto", methods=["GET", "POST"])
+@login_required
+@admin_required
 def registrar_producto():
+    conn = db.conectar()
+    cursor = conn.cursor()
+
+    # Obtener categorías
+    cursor.execute('SELECT id_cat, nombre_cat FROM categoria')
+    categorias = cursor.fetchall()
+
     if request.method == "POST":
-        img = request.files["img"]
+        img = request.files.get("img")
         nombre = request.form["nombre"].title()
         precio_u = request.form["precio_u"]
-        fk_cat = request.form["fk_cat"]
+        fk_cat = int(request.form["fk_cat"])  # Convertir a entero
         contenido = request.form["contenido"] or None
         stock = request.form["stock"] or None
-        marca = request.form["marca"].title()or None
-        cod_barras = request.form["cod_barras"]or None
-        conn = db.conectar()
-        cursor = conn.cursor()
-        # Verificar si el código de barras ya está registrado
-        cursor.execute("SELECT * FROM public.productos WHERE cod_barras = %s", (cod_barras,))
-        existing_product = cursor.fetchone()
-        if existing_product:
-            flash("El producto con este código de barras ya está registrado.")
-            cursor.close()
-            conn.close()
-            return redirect(url_for("registrar_producto"))
-        #Registro de imagenes
-        if img and allowed_file(img.filename):
-            filename = secure_filename(img.filename)
-            if not os.path.exists(app.config["UPLOAD_FOLDER"]):
-                os.makedirs(app.config["UPLOAD_FOLDER"])
-            img.save(os.path.join(app.config["UPLOAD_FOLDER"], filename))
-            img_url = url_for("static", filename="uploads/" + filename)
-            #Inserccion de datos
+        marca = request.form["marca"].title() or None
+        cod_barras = request.form["cod_barras"] or None
+
+        print(f"fk_cat: {fk_cat}")  # Depuración
+
+        try:
+            # Verificar si el código de barras ya está registrado
+            cursor.execute("SELECT * FROM public.productos WHERE cod_barras = %s", (cod_barras,))
+            existing_product = cursor.fetchone()
+            if existing_product:
+                flash("El producto con este código de barras ya está registrado.", "warning")
+                return render_template("admin/productos/registrar_producto.html", categorias=categorias, nombre=nombre, precio_u=precio_u, fk_cat=fk_cat, contenido=contenido, stock=stock, marca=marca, cod_barras=cod_barras)
+
+            # Registro de imágenes
+            if img:
+                if allowed_file(img.filename):
+                    filename = secure_filename(img.filename)
+                    if not os.path.exists(app.config["UPLOAD_FOLDER"]):
+                        os.makedirs(app.config["UPLOAD_FOLDER"])
+                    img.save(os.path.join(app.config["UPLOAD_FOLDER"], filename))
+                    img_url = url_for("static", filename="uploads/" + filename)
+                else:
+                    flash("Los únicos formatos permitidos para la imagen son - png, jpg, jpeg, gif", "warning")
+                    return render_template("admin/productos/registrar_producto.html", categorias=categorias, nombre=nombre, precio_u=precio_u, fk_cat=fk_cat, contenido=contenido, stock=stock, marca=marca, cod_barras=cod_barras)
+            else:
+                # Usa una imagen por defecto si no se sube ninguna
+                img_url = url_for("static", filename="uploads/default_producto.png")
+
+            # Inserción de datos
             cursor.execute(
-                "INSERT INTO public.productos(img, nombre, precio_u, fk_cat, contenido, stock, marca, cod_barras ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
+                "INSERT INTO public.productos(img, nombre, precio_u, fk_cat, contenido, stock, marca, cod_barras) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
                 (
                     img_url,
                     nombre,
@@ -276,17 +361,20 @@ def registrar_producto():
                 ),
             )
             conn.commit()
-            flash("Producto añadido exitosamente!")
-        else:
-            flash(
-                "Los únicos formatos permitidos para la imagen son - png, jpg, jpeg, gif"
-            )
-        cursor.close()
-        conn.close()
-        return redirect(url_for("registrar_producto"))
-    return render_template("admin/productos/registrar_producto.html")
+            flash("¡Producto añadido exitosamente!", "success")
+            return redirect(url_for("registrar_producto"))
+
+        except Exception as e:
+            conn.rollback()
+            flash(f"Error al registrar el producto: {e}", "danger")
+        finally:
+            cursor.close()
+            db.desconectar(conn)
+
+    return render_template("admin/productos/registrar_producto.html", categorias=categorias)
 # ----------------VER DE PRODUCTOS----------------
 @app.route('/productos', methods=['GET'])
+@login_required
 def ver_productos():
     search = request.args.get('search', '')
     sql_count = '''SELECT COUNT(*) FROM perfil_producto WHERE "Nombre" ILIKE %s OR "Categoria" ILIKE %s'''
@@ -304,11 +392,9 @@ def ver_productos():
     )
     
     return render_template('admin/productos/ver_productos.html', prod=items, page=page, total_pages=total_pages, search=search)
-
-
-
 # ----------------VER PERFIL DE PRODUCTOS----------------
 @app.route('/productos/<int:producto_id>')
+@login_required
 def ver_producto(producto_id):
     conn = db.conectar()
     cursor = conn.cursor()
@@ -319,53 +405,69 @@ def ver_producto(producto_id):
     return render_template('admin/productos/perfil_producto.html', producto=producto)
 # ----------------EDITAR DE PRODUCTOS----------------
 @app.route('/productos/editar_producto/<int:producto_id>', methods=['GET', 'POST'])
+@login_required
+@admin_required
 def editar_producto(producto_id):
     conn = db.conectar()
     cursor = conn.cursor()
-    cursor.execute('''SELECT * FROM perfil_producto WHERE "ID" = %s;''', (producto_id,))
+    cursor.execute('SELECT * FROM perfil_producto WHERE "ID" = %s;', (producto_id,))
     producto = cursor.fetchone()
+
+    cursor.execute('SELECT id_cat, nombre_cat FROM categoria')
+    categorias = cursor.fetchall()
+
     if request.method == 'POST':
-        img = request.files["img"]
+        img = request.files.get("img")
         nombre = request.form['nombre'].title()
         precio_u = request.form['precio_u']
-        fk_cat = request.form['fk_cat']
+        fk_cat = int(request.form['fk_cat'])
         contenido = request.form['contenido'] or None
         stock = request.form['stock'] or None
         marca = request.form['marca'].title()
         cod_barras = request.form['cod_barras']
-        # Verificar si el código de barras ya existe en otro producto
-        cursor.execute('''SELECT * FROM public.productos WHERE cod_barras = %s AND id_prod != %s''',
-                        (cod_barras, producto_id))
+
+        print(f"producto[8]: {producto[8]}")  # Depuración
+
+
+        cursor.execute('SELECT * FROM public.productos WHERE cod_barras = %s AND id_prod != %s', (cod_barras, producto_id))
         existing_product = cursor.fetchone()
         if existing_product:
             flash("El producto con este código de barras ya está registrado.", 'danger')
             cursor.close()
             db.desconectar(conn)
-            return redirect(url_for('editar_producto', producto_id=producto_id))
+            return render_template('admin/productos/editar_producto.html', producto=producto, categorias=categorias)
+
         try:
-            # Manejo de la imagen
             if img and allowed_file(img.filename):
                 filename = secure_filename(img.filename)
                 if not os.path.exists(app.config["UPLOAD_FOLDER"]):
                     os.makedirs(app.config["UPLOAD_FOLDER"])
                 img.save(os.path.join(app.config["UPLOAD_FOLDER"], filename))
                 img_url = url_for("static", filename="uploads/" + filename)
-                cursor.execute('''UPDATE public.productos SET img=%s WHERE id_prod=%s''', (img_url, producto_id))
+                cursor.execute('UPDATE public.productos SET img=%s WHERE id_prod=%s', (img_url, producto_id))
+            else:
+                img_url = producto[1]
+
             cursor.execute('''UPDATE public.productos SET nombre=%s, precio_u=%s, fk_cat=%s, contenido=%s, stock=%s, marca=%s, cod_barras=%s WHERE id_prod=%s''',
                 (nombre, precio_u, fk_cat, contenido, stock, marca, cod_barras, producto_id))
             conn.commit()
-            flash('Producto actualizado exitosamente!')
+            flash('Producto actualizado exitosamente!', 'success')
         except (psycopg2.DatabaseError, IOError) as e:
             flash('Error al actualizar el producto: ' + str(e), 'danger')
         finally:
             cursor.close()
             db.desconectar(conn)
         return redirect(url_for('ver_productos'))
+
     cursor.close()
     db.desconectar(conn)
-    return render_template('admin/productos/editar_producto.html', producto=producto)
+    return render_template('admin/productos/editar_producto.html', producto=producto, categorias=categorias)
+
+
 # ----------------ELIMINARDE PRODUCTOS----------------
 @app.route('/productos/eliminar_producto/<int:producto_id>', methods=['POST'])
+@login_required
+@admin_required
 def eliminar_producto(producto_id):
     conn = db.conectar()
     cursor = conn.cursor()
@@ -380,7 +482,7 @@ def eliminar_producto(producto_id):
 @app.route('/registrar_categoria', methods=['GET', 'POST'])
 def registrar_categoria():
     if request.method == 'POST':
-        nombre_cat = request.form['nombre_cat']
+        nombre_cat = request.form['nombre_cat'].title()
 
         conn, cur = get_db()
         try:
@@ -389,7 +491,7 @@ def registrar_categoria():
                 VALUES (%s)
             """, (nombre_cat,))
             conn.commit()
-            flash('Categoría registrada exitosamente!', 'success')
+            flash('¡Categoría registrada exitosamente!', 'success')
         except psycopg2.DatabaseError as e:
             conn.rollback()
             flash(f'Error en la base de datos: {e}', 'danger')
@@ -424,7 +526,7 @@ def ver_categorias():
 def editar_categoria(id_cat):
     conn, cur = get_db()
     if request.method == 'POST':
-        nombre_cat = request.form['nombre_cat']
+        nombre_cat = request.form['nombre_cat'].title()
         try:
             cur.execute("""
                 UPDATE categoria

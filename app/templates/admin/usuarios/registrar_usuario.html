@@ -21,13 +21,13 @@
         <button type="button" class="btn btn-warning mb-3" onclick="window.history.back()">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-left" viewBox="0 0 16 16">
                 <path fill-rule="evenodd" d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8"/>
-            </svg> Regresar
+    </svg> Regresar
         </button>
         <h2>Registrar Usuario</h2>
-        {% with messages = get_flashed_messages() %}
+        {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
-                {% for message in messages %}
-                <div class="alert alert-primary alert-dismissible fade show mt-3" role="alert">
+                {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show mt-3" role="alert">
                     <strong>{{ message }}</strong>
                     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
@@ -41,42 +41,45 @@
             </div>
             <div class="mb-3">
                 <label for="nombre" class="form-label">Nombre</label>
-                <input type="text" class="form-control" id="nombre" name="nombre" required>
+                <input type="text" class="form-control" id="nombre" name="nombre" value="{{ request.form.nombre }}" required>
             </div>
             <div class="mb-3">
                 <label for="ap_pat" class="form-label">Apellido Paterno</label>
-                <input type="text" class="form-control" id="ap_pat" name="ap_pat" required>
+                <input type="text" class="form-control" id="ap_pat" name="ap_pat" value="{{ request.form.ap_pat }}" required>
             </div>
             <div class="mb-3">
                 <label for="ap_mat" class="form-label">Apellido Materno</label>
-                <input type="text" class="form-control" id="ap_mat" name="ap_mat" required>
+                <input type="text" class="form-control" id="ap_mat" name="ap_mat" value="{{ request.form.ap_mat }}" required>
             </div>
             <div class="mb-3">
                 <label for="usuario" class="form-label">Usuario</label>
-                <input type="text" class="form-control" id="usuario" name="usuario" required>
+                <input type="text" class="form-control" id="usuario" name="usuario" value="{{ request.form.usuario }}" required>
+                <small class="form-text text-white">El usuario debe estar en minúsculas.</small>
             </div>
             <div class="mb-3">
                 <label for="contraseña" class="form-label">Contraseña</label>
-                <input type="password" class="form-control" id="contraseña" name="contraseña" required>
+                <input type="password" class="form-control" id="contraseña" name="contraseña" value="{{ request.form.contraseña }}" required>
+                <small class="form-text text-white">La contraseña debe tener al menos 8 caracteres.</small>
             </div>
             <div class="mb-3">
                 <label for="rol" class="form-label">Rol</label>
-                <select class="form-select" id="rol" name="rol" required>
-                    <option value="Usuario">Usuario</option>
-                    <option value="Administrador">Administrador</option>
+                <select class="form-select" id="rol" name="rol" value="{{ request.form.rol }}" required>
+                    <option value="Usuario" {% if request.form.rol == "Usuario" %}selected{% endif %}>Usuario</option>
+                    <option value="Administrador" {% if request.form.rol == "Administrador" %}selected{% endif %}>Administrador</option>
                 </select>
             </div>
             <div class="mb-3">
-                <label for="f_nacimiento" class="form-label">Fecha de Nacimiento</label>
-                <input type="date" class="form-control" id="f_nacimiento" name="f_nacimiento" required>
+                <label for="f_nacimiento" class="form-label" >Fecha de Nacimiento</label>
+                <input type="date" class="form-control" id="f_nacimiento" name="f_nacimiento" value="{{ request.form.f_nacimiento }}" required>
             </div>
             <div class="mb-3">
                 <label for="telefono" class="form-label">Teléfono</label>
-                <input type="text" class="form-control" id="telefono" name="telefono" required>
+                <input type="text" class="form-control" id="telefono" name="telefono" value="{{ request.form.telefono }}" required>
+                <small class="form-text text-white">El número de teléfono debe tener 10 dígitos.</small>
             </div>
             <div class="mb-3">
                 <label for="direccion" class="form-label">Dirección</label>
-                <input type="text" class="form-control" id="direccion" name="direccion" required>
+                <input type="text" class="form-control" id="direccion" name="direccion" value="{{ request.form.direccion }}" required>
             </div>
             <button type="submit" class="btn btn-primary">Registrar</button>
         </form>

@@ -19,9 +19,18 @@
     {% endblock %}
 
     {% block content %}
-    <h2>Listado de Usuarios</h2>
+    <h1 class="mt-3 mb-4 text-center">Listado de Usuarios</h1>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show mt-3" role="alert">
+                    <strong>{{ message }}</strong>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                {% endfor %}
+            {% endif %}
+    {% endwith %}
     <div class="container-fluid top-50 start-50">
-        <h2>Usuarios</h2>
         <div class="row">
             {% for usuario in usuarios %}
             <div class="col-md-4">
@@ -30,6 +39,7 @@
                     <div class="card-body">
                         <h5 class="card-title">{{ usuario.nombre }} {{ usuario.ap_pat }} {{ usuario.ap_mat }}</h5>
                         <p class="card-text"><strong>Usuario:</strong> {{ usuario.usuario }}</p>
+                        <p class="card-text"><strong>Edad:</strong> {{ usuario.edad }}</p>
                         <p class="card-text"><strong>Rol:</strong> {{ usuario.rol }}</p>
                         <p class="card-text"><strong>Teléfono:</strong> {{ usuario.telefono }}</p>
                         <p class="card-text"><strong>Dirección:</strong> {{ usuario.direccion }}</p>

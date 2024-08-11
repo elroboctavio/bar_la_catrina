@@ -24,77 +24,65 @@
             </svg> Regresar
         </button>
         <h2>Añadir Producto</h2>
-        {% with messages = get_flashed_messages() %}
+        {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
-                {% for message in messages %}
-                <div class="alert alert-primary alert-dismissible fade show mt-3" role="alert">
+                {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show mt-3" role="alert">
                     <strong>{{ message }}</strong>
                     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
                 {% endfor %}
             {% endif %}
-        {% endwith %}
-        <form method="POST" enctype="multipart/form-data" class="needs-validation" novalidate>
-            <div class="mb-3">
-                <label for="img" class="form-label">Imagen:</label>
-                <input type="file" name="img" class="form-control" required>
-            </div>
-            <div class="mb-3">
-                <label for="nombre" class="form-label">Nombre:</label>
-                <input type="text" name="nombre" class="form-control" pattern="[A-Za-z0-9\s]+" title="Solo se permiten letras, números y espacios" required>
-            </div>
-            <div class="mb-3">
-                <label for="precio_u" class="form-label">Precio:</label>
-                <input type="number" name="precio_u" class="form-control" step="0.5" required>
-            </div>
-            <div class="mb-3">
-                <label for="fk_cat" class="form-label">Categoría:</label>
-                <select name="fk_cat" class="form-select" required>
-                    <option value="1">Tritón 3L</option>
-                    <option value="2">Tritón 5L</option>
-                    <option value="3">Camaroneras</option>
-                    <option value="4">Cerveza</option>
-                    <option value="5">Chelada</option>
-                    <option value="6">Michelada</option>
-                    <option value="7">Caguamones</option>
-                    <option value="8">Venenosas</option>
-                    <option value="9">De la Casa</option>
-                    <option value="10">Sin Alcohol</option>
-                    <option value="11">Litros</option>
-                    <option value="12">Whisky</option>
-                    <option value="13">Vodka</option>
-                    <option value="14">Tequila</option>
-                    <option value="15">Brandy</option>
-                    <option value="16">Mezcal</option>
-                    <option value="17">Ron</option>
-                    <option value="18">Bebidas Selectas</option>
-                </select>
-            </div>
-            <div class="mb-3">
-                <label for="contenido" class="form-label">Contenido:</label>
-                <select name="contenido" class="form-select" required>
-                    <option value="500ml">500ml</option>
-                    <option value="1L">1L</option>
-                    <option value="copa">Copa</option>
-                    <option value="botella">Botella</option>
-                    <option value="">No aplica</option>
-                </select>
-            </div>
-            <div class="mb-3">
-                <label for="stock" class="form-label">Cantidad de Stock:</label>
-                <input type="number" name="stock" class="form-control">
-            </div>
-            <div class="mb-3">
-                <label for="marca" class="form-label">Marca:</label>
-                <input type="text" name="marca" class="form-control" pattern="[A-Za-z0-9\s]+" title="Solo se permiten letras, números y espacios">
-            </div>
-            <div class="mb-3">
-                <label for="cod_barras" class="form-label">Código de Barras:</label>
-                <input type="text" name="cod_barras" class="form-control" pattern="\d+" title="Solo se permiten números">
-            </div>
-            <button type="submit" class="btn btn-primary">Añadir Producto</button>
-        </form>
-
+    {% endwith %}
+    <form method="POST" enctype="multipart/form-data" class="needs-validation" novalidate>
+        <div class="mb-3">
+            <label for="img" class="form-label">Imagen:</label>
+            <input type="file" name="img" class="form-control" required>
+        </div>
+        <div class="mb-3">
+            <label for="nombre" class="form-label">Nombre:</label>
+            <input type="text" name="nombre" class="form-control" pattern="[A-Za-z0-9\s]+" title="Solo se permiten letras, números y espacios" value="{{ nombre }}" required>
+        </div>
+        <div class="mb-3">
+            <label for="precio_u" class="form-label">Precio:</label>
+            <input type="number" name="precio_u" class="form-control" step="0.5" value="{{ precio_u }}" required>
+        </div>
+        <div class="mb-3">
+            <label for="fk_cat" class="form-label">Categoría:</label>
+            <select name="fk_cat" class="form-select" required>
+                {% for categoria in categorias %}
+                    <option value="{{ categoria[0] }}" {% if categoria[0] == fk_cat %}selected{% endif %}>{{ categoria[1] }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div class="mb-3">
+            <label for="contenido" class="form-label">Contenido:</label>
+            <select name="contenido" class="form-select" required>
+                <option value="" {% if contenido == '' %}selected{% endif %}>No aplica</option>
+                <option value="500ml" {% if contenido == '500ml' %}selected{% endif %}>500ml</option>
+                <option value="1L" {% if contenido == '1L' %}selected{% endif %}>1L</option>
+                <option value="copa" {% if contenido == 'copa' %}selected{% endif %}>Copa</option>
+                <option value="botella" {% if contenido == 'botella' %}selected{% endif %}>Botella</option>
+            </select>
+        </div>
+        <div class="mb-3">
+            <label for="stock" class="form-label">Cantidad de Stock:</label>
+            <input type="number" name="stock" class="form-control" value="{{ stock }}">
+        </div>
+        <div class="mb-3">
+            <label for="marca" class="form-label">Marca:</label>
+            <input type="text" name="marca" class="form-control" pattern="[A-Za-z0-9\s]+" title="Solo se permiten letras, números y espacios" value="{{ marca }}">
+        </div>
+        <div class="mb-3">
+            <label for="cod_barras" class="form-label">Código de Barras:</label>
+            <input type="text" name="cod_barras" class="form-control" pattern="\d+" title="Solo se permiten números" value="{{ cod_barras }}">
+        </div>
+        <button type="submit" class="btn btn-primary">Añadir Producto</button>
+    </form>
+    
+    
+    
         
     </div>
     {% endblock %}

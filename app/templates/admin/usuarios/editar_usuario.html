@@ -59,13 +59,13 @@
             <div class="mb-3">
                 <label for="contraseña" class="form-label">Contraseña</label>
                 <input type="password" class="form-control" id="contraseña" name="contraseña">
-                <small class="form-text text-muted">Deja este campo vacío si no deseas cambiar la contraseña.</small>
+                <small class="form-text text-white">Deja este campo vacío si no deseas cambiar la contraseña.</small>
             </div>
             <div class="mb-3">
                 <label for="rol" class="form-label">Rol</label>
                 <select class="form-control" id="rol" name="rol" required>
-                    <option value="admin" {% if usuario.rol == 'admin' %}selected{% endif %}>Admin</option>
-                    <option value="user" {% if usuario.rol == 'user' %}selected{% endif %}>User</option>
+                    <option value="Administrador" {% if usuario.rol == 'Administrador' %}selected{% endif %}>Administrador</option>
+                    <option value="Usuario" {% if usuario.rol == 'Usuario' %}selected{% endif %}>Usario</option>
                 </select>
             </div>
             <div class="mb-3">
