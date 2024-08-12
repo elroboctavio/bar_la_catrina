@@ -79,11 +79,11 @@
             {% if page > 1 %}
             <li class="page-item">
                 <a class="page-link" href="{{ url_for('ver_productos', page=page-1, search=search) }}" aria-label="Previous">
-                    <span aria-hidden="true">Atras</span>
+                    <span aria-hidden="true">Atrás</span>
                 </a>
             </li>
             {% endif %}
-            {% for p in range(1, total_pages + 1) %}
+            {% for p in page_range %}
             <li class="page-item {% if p == page %}active{% endif %}">
                 <a class="page-link" href="{{ url_for('ver_productos', page=p, search=search) }}">{{ p }}</a>
             </li>
@@ -97,37 +97,41 @@
             {% endif %}
         </ul>
     </nav>
+    
+
+    
 
     <!-- Modal de Confirmación de Eliminación -->
-    <div class="modal fade" id="staticBackdrop" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content bg-dark text-white">
-                <div class="modal-header">
-                    <h1 class="modal-title fs-5" id="staticBackdropLabel">Confirmar Eliminación</h1>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    ¿Estás seguro de que deseas eliminar este producto?
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <form id="deleteForm" method="POST">
-                        <button type="submit" class="btn btn-danger">Eliminar</button>
-                    </form>
-                </div>
+<div class="modal fade" id="staticBackdrop" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content bg-dark text-white">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="staticBackdropLabel">Confirmar Eliminación</h1>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                ¿Estás seguro de que deseas eliminar este producto?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <form id="deleteForm" method="POST">
+                    <button type="submit" class="btn btn-danger">Eliminar</button>
+                </form>
             </div>
         </div>
     </div>
+</div>
 
-    <script>
-        var staticBackdrop = document.getElementById('staticBackdrop');
-        staticBackdrop.addEventListener('show.bs.modal', function (event) {
-            var button = event.relatedTarget;
-            var productId = button.getAttribute('data-id');
-            var form = document.getElementById('deleteForm');
-            form.action = '/eliminar_producto/' + productId;
-        });
-    </script>
+<script>
+    var staticBackdrop = document.getElementById('staticBackdrop');
+    staticBackdrop.addEventListener('show.bs.modal', function (event) {
+        var button = event.relatedTarget;
+        var productId = button.getAttribute('data-id');
+        var form = document.getElementById('deleteForm');
+        form.action = '/productos/eliminar_producto/' + productId;  // Asegúrate de que la URL sea correcta
+    });
+</script>
+
     {% endblock %}
     
 </body>

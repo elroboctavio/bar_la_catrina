@@ -13,33 +13,31 @@
                     <a class="nav-link" href="{{ url_for('index') }}">Inicio</a>
                 </li>
                 <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle nav-link" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                         Productos
                     </a>
                     <ul class="dropdown-menu">
                         <li><a class="dropdown-item" href="{{ url_for('ver_productos') }}">Ver Productos</a></li>
                         {% if session['role'] == 'Administrador' %}
                         <li><a class="dropdown-item" href="{{ url_for('registrar_producto') }}">Registrar Productos</a></li>
-                        <li><a class="dropdown-item" href="{{ url_for('ver_categorias') }}">Ver Categorias</a></li>
-                        <li><a class="dropdown-item" href="{{ url_for('registrar_categoria') }}">Registrar Categorias</a></li>
+                        <li><a class="dropdown-item" href="{{ url_for('ver_categorias') }}">Ver Categorías</a></li>
+                        <li><a class="dropdown-item" href="{{ url_for('registrar_categoria') }}">Registrar Categorías</a></li>
                         {% endif %}
                     </ul>
                 </li>
                 {% if session['role'] == 'Administrador' %}
                 <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle nav-link" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                         Usuarios
                     </a>
                     <ul class="dropdown-menu">
-                        
                         <li><a class="dropdown-item" href="{{ url_for('ver_usuarios') }}">Ver Usuarios</a></li>
                         <li><a class="dropdown-item" href="{{ url_for('registrar_usuario') }}">Registrar Usuario</a></li>
-                        
                     </ul>
                 </li>
                 {% endif %}
                 <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle nav-link" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                         Ventas
                     </a>
                     <ul class="dropdown-menu">
@@ -47,23 +45,24 @@
                         <li><a class="dropdown-item" href="{{ url_for('registrar_venta') }}">Registrar Venta</a></li>
                     </ul>
                 </li>
+                {% if session['role'] == 'Administrador' %}
                 <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle nav-link" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                         Mesas
                     </a>
                     <ul class="dropdown-menu">
                         <li><a class="dropdown-item" href="{{ url_for('ver_mesas') }}">Ver Mesas</a></li>
-                        {% if session['role'] == 'admin' %}
+                        {% if session['role'] == 'Administrador' %}
                         <li><a class="dropdown-item" href="{{ url_for('registrar_mesa') }}">Registrar Mesa</a></li>
                         {% endif %}
                     </ul>
                 </li>
+                {% endif %}
                 <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle nav-link" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                         {{ session['username'] }}
                     </a>
                     <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="#">Ver Perfil</a></li>
                         <li><a class="dropdown-item" href="{{ url_for('logout') }}">Cerrar Sesión</a></li>
                     </ul>
                 </li>

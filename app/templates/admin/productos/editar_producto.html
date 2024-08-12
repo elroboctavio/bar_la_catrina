@@ -55,11 +55,13 @@
             </div>
             <!-- Columna para el Formulario -->
             <div class="col-md-6">
-                    <label for="img" class="form-label">Cambiar Imagen</label>
-                    <input type="file" class="form-control" id="img" name="img">
                     <div class="mb-3">
                         <label for="nombre" class="form-label">Nombre</label>
                         <input type="text" class="form-control" id="nombre" name="nombre" pattern="[A-Za-z0-9\s]+" title="Solo se permiten letras, números y espacios" value="{{ producto[2] }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="precio_u" class="form-label">Precio:</label>
+                        <input type="number" class="form-control" id="precio_u "name="precio_u"  step="0.5" value="{{ producto[3] }}" required>
                     </div>
                     <div class="mb-3">
                         <label for="fk_cat" class="form-label">Categoría</label>
@@ -72,11 +74,11 @@
                     <div class="mb-3">
                         <label for="contenido" class="form-label">Contenido</label>
                         <select class="form-control" id="contenido" name="contenido" required>
+                            <option value="" {% if producto[4]==none %}selected{% endif %}>No aplica</option>
                             <option value="500ml" {% if producto[4]=='500ml' %}selected{% endif %}>500ml</option>
                             <option value="1L" {% if producto[4]=='1L' %}selected{% endif %}>1L</option>
                             <option value="copa" {% if producto[4]=='copa' %}selected{% endif %}>Copa</option>
                             <option value="botella" {% if producto[4]=='botella' %}selected{% endif %}>Botella</option>
-                            <option value="" {% if producto[4]==none %}selected{% endif %}>No aplica</option>
                         </select>
                     </div>
                     <div class="mb-3">
@@ -89,7 +91,7 @@
                     </div>
                     <div class="mb-3">
                         <label for="cod_barras" class="form-label">Código de Barras</label>
-                        <input type="text" class="form-control" id="cod_barras" name="cod_barras" pattern="\d+" title="Solo se permiten números" value="{{ producto[7] }}" required>
+                        <input type="text" class="form-control" id="cod_barras" name="cod_barras" pattern="\d+" title="Solo se permiten números" value="{{ producto[7] }}">
                     </div>
                     <button type="submit" class="btn btn-primary">Guardar Cambios</button>
                 </form>                

@@ -296,6 +296,13 @@ def paginador(sql_count, sql_lim, in_page, per_pages, search_param):
 
     total_pages = (total_items + per_page - 1) // per_page
 
+    # Calcular el rango de páginas a mostrar
+    start_page = max(page - 2, 1)
+    end_page = min(page + 2, total_pages)
+    page_range = range(start_page, end_page + 1)
+
+    return items, page, per_page, total_items, total_pages, page_range
+
     return items, page, per_page, total_items, total_pages
 
 # ----------------CRUD DE PRODUCTOS----------------
@@ -383,7 +390,7 @@ def ver_productos():
     # Incluye los comodines % en los parámetros
     search_param = f'%{search}%'
     
-    items, page, per_page, total_items, total_pages = paginador(
+    items, page, per_page, total_items, total_pages, page_range = paginador(
         sql_count=sql_count,
         sql_lim=sql_lim,
         in_page=1,
@@ -391,7 +398,8 @@ def ver_productos():
         search_param=search_param
     )
     
-    return render_template('admin/productos/ver_productos.html', prod=items, page=page, total_pages=total_pages, search=search)
+    return render_template('admin/productos/ver_productos.html', prod=items, page=page, total_pages=total_pages, search=search, page_range=page_range)
+
 # ----------------VER PERFIL DE PRODUCTOS----------------
 @app.route('/productos/<int:producto_id>')
 @login_required
@@ -424,7 +432,7 @@ def editar_producto(producto_id):
         contenido = request.form['contenido'] or None
         stock = request.form['stock'] or None
         marca = request.form['marca'].title()
-        cod_barras = request.form['cod_barras']
+        cod_barras = request.form['cod_barras']or None
 
         print(f"producto[8]: {producto[8]}")  # Depuración
 
@@ -476,7 +484,7 @@ def eliminar_producto(producto_id):
     cursor.close()
     db.desconectar(conn)
     flash('Producto eliminado exitosamente!')
-    return redirect(url_for('admin/productos/ver_productos'))
+    return redirect(url_for('ver_productos'))
 # ----------------CRUD DE CATEGORIAS----------------
 # ----------------REGISTRAR DE CATEGORIA----------------
 @app.route('/registrar_categoria', methods=['GET', 'POST'])
@@ -486,12 +494,16 @@ def registrar_categoria():
 
         conn, cur = get_db()
         try:
-            cur.execute("""
-                INSERT INTO categoria (nombre_cat)
-                VALUES (%s)
-            """, (nombre_cat,))
-            conn.commit()
-            flash('¡Categoría registrada exitosamente!', 'success')
+            # Verificar si el nombre de la categoría ya existe
+            cur.execute("SELECT * FROM categoria WHERE nombre_cat = %s", (nombre_cat,))
+            existing_categoria = cur.fetchone()
+            if existing_categoria:
+                flash('El nombre de la categoría ya está registrado.', 'danger')
+            else:
+                cur.execute("""INSERT INTO categoria (nombre_cat)VALUES (%s)""", (nombre_cat,))
+                conn.commit()
+                flash('¡Categoría registrada exitosamente!', 'success')
+                return redirect(url_for('ver_categorias'))  # Redirigir a "Ver Categorías" después del registro
         except psycopg2.DatabaseError as e:
             conn.rollback()
             flash(f'Error en la base de datos: {e}', 'danger')
@@ -505,6 +517,7 @@ def registrar_categoria():
         return redirect(url_for('registrar_categoria'))
 
     return render_template('admin/categorias/registrar_categoria.html')
+
 
 # ----------------VER DE CATEGORIA----------------
 @app.route('/categorias')
@@ -528,13 +541,21 @@ def editar_categoria(id_cat):
     if request.method == 'POST':
         nombre_cat = request.form['nombre_cat'].title()
         try:
-            cur.execute("""
-                UPDATE categoria
-                SET nombre_cat = %s
-                WHERE id_cat = %s
-            """, (nombre_cat, id_cat))
-            conn.commit()
-            flash('Categoría actualizada exitosamente!', 'success')
+            # Verificar si el nombre de la categoría ya existe
+            cur.execute("SELECT * FROM categoria WHERE nombre_cat = %s AND id_cat != %s", (nombre_cat, id_cat))
+            existing_categoria = cur.fetchone()
+            
+            if existing_categoria:
+                flash('El nombre de la categoría ya está registrado.', 'danger')
+            else:
+                cur.execute("""
+                    UPDATE categoria
+                    SET nombre_cat = %s
+                    WHERE id_cat = %s
+                """, (nombre_cat, id_cat))
+                conn.commit()
+                flash('Categoría actualizada exitosamente!', 'success')
+                return redirect(url_for('ver_categorias'))  # Redirigir a "Ver Categorías" después de la actualización
         except psycopg2.DatabaseError as e:
             conn.rollback()
             flash(f'Error en la base de datos: {e}', 'danger')
@@ -554,6 +575,7 @@ def editar_categoria(id_cat):
         desconectar(conn)
     
     return render_template('admin/categorias/editar_categoria.html', categoria=categoria)
+
 
 
 # ----------------ELIMINAR DE CATEGORIA----------------
@@ -602,7 +624,7 @@ def registrar_mesa():
             cursor.close()
             desconectar(conn)
 
-        return redirect(url_for('registrar_mesa'))
+        return redirect(url_for('ver_mesas'))
 
     return render_template('admin/mesas/registrar_mesa.html')
 # ----------------VER DE MESAS----------------
@@ -624,26 +646,26 @@ def eliminar_mesa(mesa_id):
     conn.commit()
     cursor.close()
     conn.close()
-    flash('Mesa eliminada exitosamente!')
-    return redirect(url_for('mesas'))
+    flash('Mesa eliminada exitosamente!', 'success')
+    return redirect(url_for('ver_mesas'))
 # ----------------EDITAR DE MESAS----------------
 @app.route('/mesas/editar_mesa/<int:mesa_id>', methods=['GET', 'POST'])
 def editar_mesa(mesa_id):
     conn = db.conectar()
     cursor = conn.cursor()
     if request.method == 'POST':
-        ubicacion = request.form['ubicacion']
+        ubicacion = request.form['ubicacion'].title()
         num_mesa = request.form['num_mesa']
         try:
             cursor.execute('''UPDATE public.mesa SET ubicacion = %s, num_mesa = %s WHERE id_mesa = %s;''', (ubicacion, num_mesa, mesa_id))
             conn.commit()
-            flash('Mesa actualizada exitosamente!')
+            flash('Mesa actualizada exitosamente!', 'success')
         except psycopg2.DatabaseError as e:
             flash('Error al actualizar la mesa: ' + str(e), 'danger')
         finally:
             cursor.close()
             conn.close()
-        return redirect(url_for('mesas'))
+        return redirect(url_for('ver_mesas'))
     else:
         cursor.execute('''SELECT * FROM public.mesa WHERE id_mesa = %s;''', (mesa_id,))
         mesa = cursor.fetchone()
