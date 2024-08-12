@@ -703,13 +703,25 @@ def editar_mesa(mesa_id):
 @app.route('/ventas/nueva', methods=['GET', 'POST'])
 @login_required
 def procesar_venta():
+    conn = db.conectar()
+    cursor = conn.cursor()
+    
+    # Obtener categorías
+    cursor.execute('SELECT id_cat, nombre_cat FROM categoria')
+    categorias = cursor.fetchall()
+    
+    # Obtener mesas
+    cursor.execute('SELECT id_mesa, num_mesa FROM mesa')
+    mesas = cursor.fetchall()
+    
+    # Obtener productos
+    cursor.execute('SELECT id_prod, nombre, fk_cat, contenido, precio_u, cod_barras FROM productos')
+    productos = cursor.fetchall()
+    
     if request.method == 'POST':
-        conn = db.conectar()
-        cursor = conn.cursor()
-            
         try:
             # Extraer los datos del formulario
-            nombre_cliente = request.form['nombre_cliente']
+            nombre_cliente = request.form['nombre_cliente'].title()
             forma_pago = request.form['forma_pago']
             fk_mesa = int(request.form['fk_mesa'])
             fk_usuario = session['user_id']  # Obtener el ID del usuario desde la sesión
@@ -735,25 +747,23 @@ def procesar_venta():
             for i in range(num_productos):
                 id_prod = int(request.form[f'productos[{i}][id_prod]'])
                 cantidad = int(request.form[f'productos[{i}][cantidad]'])
-                print(f"Producto {i}: ID={id_prod}, Cantidad={cantidad}")  # Línea de depuración
+                categoria_prod = request.form[f'productos[{i}][categoria]']
+                nombre_prod = request.form[f'productos[{i}][nombre]']
+                contenido_prod = request.form[f'productos[{i}][contenido]']
+                precio_prod = float(request.form[f'productos[{i}][precio]'])
+                cod_barras_prod = request.form[f'productos[{i}][cod_barras]']
                 
-                # Obtener el precio del producto desde la base de datos
-                cursor.execute("SELECT precio_u FROM productos WHERE id_prod = %s", (id_prod,))
-                precio = cursor.fetchone()
-                if precio is None:
-                    raise Exception(f"Producto con id {id_prod} no encontrado.")
-                precio = precio[0]
-                print(f"Precio del producto {id_prod}: {precio}")  # Línea de depuración
+                print(f"Producto {i}: ID={id_prod}, Cantidad={cantidad}, Categoría={categoria_prod}, Nombre={nombre_prod}, Contenido={contenido_prod}, Precio={precio_prod}, Código de Barras={cod_barras_prod}")  # Línea de depuración
                 
-                subtotal = precio * cantidad
+                subtotal = precio_prod * cantidad
                 total_venta += subtotal
                 cant_prod += cantidad
                 print(f"Subtotal para producto {id_prod}: {subtotal}")  # Línea de depuración
                 
                 cursor.execute("""
-                    INSERT INTO detalles_venta (fk_venta, fk_producto, subtotal, cantidad)
-                    VALUES (%s, %s, %s, %s)
-                """, (id_venta, id_prod, subtotal, cantidad))
+                    INSERT INTO detalles_venta (fk_venta, fk_producto, subtotal, cantidad, categoria_prod, nombre_prod, contenido_prod, precio_prod, cod_barras_prod)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                """, (id_venta, id_prod, subtotal, cantidad, categoria_prod, nombre_prod, contenido_prod, precio_prod, cod_barras_prod))
             
             # Actualizar la tabla ventas con el total y la cantidad de productos
             cursor.execute("""
@@ -777,4 +787,4 @@ def procesar_venta():
         
         return redirect(url_for('procesar_venta'))
     
-    return render_template('admin/ventas/nueva.html')
+    return render_template('admin/ventas/nueva.html', categorias=categorias, mesas=mesas, productos=productos)
