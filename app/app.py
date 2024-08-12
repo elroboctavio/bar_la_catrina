@@ -700,74 +700,81 @@ def editar_mesa(mesa_id):
 
 # ----------------CRUD DE VENTAS----------------
 # ----------------REGISTRAR DE VENTAS----------------
-@app.route('/registrar_venta')
-def registrar_venta():
-    return render_template('admin/ventas/registrar_venta.html')
+@app.route('/ventas/nueva', methods=['GET', 'POST'])
+@login_required
+def procesar_venta():
+    if request.method == 'POST':
+        conn = db.conectar()
+        cursor = conn.cursor()
+            
+        try:
+            # Extraer los datos del formulario
+            nombre_cliente = request.form['nombre_cliente']
+            forma_pago = request.form['forma_pago']
+            fk_mesa = int(request.form['fk_mesa'])
+            fk_usuario = session['user_id']  # Obtener el ID del usuario desde la sesión
+            
+            # Insertar en la tabla ventas
+            cursor.execute("""
+                INSERT INTO ventas (fecha_venta, cant_prod, total, forma_pago, fk_mesa, fk_usuario, nombre_cliente)
+                VALUES (CURRENT_TIMESTAMP, 0, 0, %s, %s, %s, %s) RETURNING id_venta
+            """, (forma_pago, fk_mesa, fk_usuario, nombre_cliente))
+            
+            id_venta = cursor.fetchone()[0]
+            print(f"ID de la venta: {id_venta}")  # Línea de depuración
+            
+            # Insertar cada producto en la tabla detalles_venta
+            total_venta = 0
+            cant_prod = 0
+            productos = request.form.to_dict(flat=False)
+            print(f"Productos: {productos}")  # Línea de depuración
 
-@app.route('/finalizar', methods=['POST'])
-def finalizar():
-    productos = json.loads(request.form['productos'])
-    forma_pago = request.form['forma_pago']
-    fk_mesa = request.form['fk_mesa']
-    nombre_cliente = request.form['nombre_cliente']
-    fk_usuario = 7  # Asumiendo un usuario fijo por simplicidad
+            num_productos = len([key for key in productos.keys() if key.startswith('productos[') and key.endswith('][id_prod]')])
+            print(f"Número de productos: {num_productos}")  # Línea de depuración
 
-    total = sum([p['subtotal'] for p in productos])
-    cant_prod = sum([p['cantidad'] for p in productos])
-
-    conn, cur = get_db()
-    try:
-        # Insertar en la tabla ventas
-        cur.execute("""
-            INSERT INTO ventas (fecha_venta, cant_prod, total, forma_pago, fk_mesa, fk_usuario, nombre_cliente)
-            VALUES (CURRENT_TIMESTAMP, %s, %s, %s, %s, %s, %s)
-            RETURNING id_venta
-        """, (cant_prod, total, forma_pago, fk_mesa, fk_usuario, nombre_cliente))
-        id_venta = cur.fetchone()[0]
-
-        # Insertar en la tabla detalles_venta y actualizar stock
-        for producto in productos:
-            cur.execute("""
-                INSERT INTO detalles_venta (id_venta, id_producto, cantidad, subtotal)
-                VALUES (%s, %s, %s, %s)
-            """, (id_venta, producto['idProducto'], producto['cantidad'], producto['subtotal']))
-
-            # Actualizar el stock del producto
-            cur.execute("""
-                UPDATE productos
-                SET stock = stock - %s
-                WHERE id_producto = %s
-            """, (producto['cantidad'], producto['idProducto']))
-
-        conn.commit()
-    except psycopg2.DatabaseError as e:
-        conn.rollback()
-        print(f"Database error: {e}")
-    except Exception as e:
-        conn.rollback()
-        print(f"Unexpected error: {e}")
-    finally:
-        cur.close()
-        desconectar(conn)
-
-    return redirect(url_for('admin/ventas/registrar_venta.html'))
-
-@app.route('/buscar_productos', methods=['GET'])
-def buscar_productos():
-    termino = request.args.get('termino', '')
-    conn, cur = get_db()
-    try:
-        cur.execute("""
-            SELECT id_prod AS "ID", img AS "Imagen", nombre AS "Nombre", precio_u AS "Precio", contenido AS "Contenido", stock AS "Stock", marca AS "Marca", cod_barras AS "Codigo de Barras", nombre_cat AS "Categoria"
-            FROM perfil_producto
-            WHERE nombre ILIKE %s OR nombre_cat ILIKE %s
-        """, (f'%{termino}%', f'%{termino}%'))
-        productos = cur.fetchall()
-    except Exception as e:
-        print(f"Error: {e}")
-        productos = []
-    finally:
-        cur.close()
-        desconectar(conn)
+            for i in range(num_productos):
+                id_prod = int(request.form[f'productos[{i}][id_prod]'])
+                cantidad = int(request.form[f'productos[{i}][cantidad]'])
+                print(f"Producto {i}: ID={id_prod}, Cantidad={cantidad}")  # Línea de depuración
+                
+                # Obtener el precio del producto desde la base de datos
+                cursor.execute("SELECT precio_u FROM productos WHERE id_prod = %s", (id_prod,))
+                precio = cursor.fetchone()
+                if precio is None:
+                    raise Exception(f"Producto con id {id_prod} no encontrado.")
+                precio = precio[0]
+                print(f"Precio del producto {id_prod}: {precio}")  # Línea de depuración
+                
+                subtotal = precio * cantidad
+                total_venta += subtotal
+                cant_prod += cantidad
+                print(f"Subtotal para producto {id_prod}: {subtotal}")  # Línea de depuración
+                
+                cursor.execute("""
+                    INSERT INTO detalles_venta (fk_venta, fk_producto, subtotal, cantidad)
+                    VALUES (%s, %s, %s, %s)
+                """, (id_venta, id_prod, subtotal, cantidad))
+            
+            # Actualizar la tabla ventas con el total y la cantidad de productos
+            cursor.execute("""
+                UPDATE ventas
+                SET cant_prod = %s, total = %s
+                WHERE id_venta = %s
+            """, (cant_prod, total_venta, id_venta))
+            print(f"Total de la venta: {total_venta}, Cantidad de productos: {cant_prod}")  # Línea de depuración
+            
+            # Confirmar la transacción
+            conn.commit()
+            flash('Venta procesada exitosamente', 'success')
+        
+        except Exception as e:
+            conn.rollback()
+            flash(f'Ocurrió un error: {str(e)}', 'danger')
+        
+        finally:
+            cursor.close()
+            desconectar(conn)
+        
+        return redirect(url_for('procesar_venta'))
     
-    return jsonify(productos)
+    return render_template('admin/ventas/nueva.html')
