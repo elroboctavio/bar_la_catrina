@@ -63,22 +63,22 @@
             <tbody class="text-center">
                 {% for venta in ventas %}
                 <tr>
-                    <td>{{ venta[0] }}</td>
-                    <td>{{ venta[1] }}</td>
-                    <td>{{ venta[2] }}</td>
-                    <td>{{ venta[3] }}</td>
-                    <td>{{ venta[4] }}</td>
-                    <td>{{ venta[5] }}</td>
-                    <td>{{ venta[6] }}</td>
-                    <td>{{ venta[7] }}</td>
+                    <td>{{ venta.id_venta }}</td>
+                    <td>{{ venta.fecha_venta }}</td>
+                    <td>{{ venta.cant_prod }}</td>
+                    <td>{{ venta.total }}</td>
+                    <td>{{ venta.forma_pago }}</td>
+                    <td>{{ venta.num_mesa }}</td>
+                    <td>{{ venta.nombre_completo }}</td>
+                    <td>{{ venta.nombre_cliente }}</td>
                     <td>
-                        <a href="{{ url_for('ver_detalles_venta', venta_id=venta[0]) }}" class="btn btn-info btn-sm">Ver Detalles</a>                    </td>
+                        <a href="{{ url_for('ver_detalles_venta', venta_id=venta.id_venta) }}" class="btn btn-info btn-sm">Ver Detalles</a>
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
-{% endblock %}
-
+    {% endblock %}
 </body>
 {% endblock %}

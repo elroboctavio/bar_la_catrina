@@ -794,15 +794,16 @@ def registrar_venta():
 @login_required
 def ver_ventas():
     conn = db.conectar()
-    cursor = conn.cursor()
+    cursor = conn.cursor(cursor_factory=RealDictCursor)
     
     # Obtener los parámetros de fecha del formulario
     start_date = request.args.get('start_date')
     end_date = request.args.get('end_date')
     
-    # Construir la consulta SQL con filtros de fecha
+    # Construir la consulta SQL base
     query = """
-        SELECT v.id_venta, v.fecha_venta, v.cant_prod, v.total, v.forma_pago, m.num_mesa, CONCAT(u.nombre, ' ', u.ap_pat) AS nombre_completo, v.nombre_cliente
+        SELECT v.id_venta, v.fecha_venta, v.cant_prod, v.total, v.forma_pago, m.num_mesa, 
+        CONCAT(u.nombre, ' ', u.ap_pat) AS nombre_completo, v.nombre_cliente
         FROM ventas v
         INNER JOIN mesa m ON v.fk_mesa = m.id_mesa
         INNER JOIN usuario u ON v.fk_usuario = u.id_usuario
@@ -815,6 +816,10 @@ def ver_ventas():
     if end_date:
         conditions.append(f"v.fecha_venta <= '{end_date}'")
     
+    # Filtrar según el rol del usuario
+    if session['role'] != 'Administrador':
+        conditions.append(f"v.fk_usuario = {session['user_id']}")
+    
     if conditions:
         query += " WHERE " + " AND ".join(conditions)
     
@@ -824,9 +829,10 @@ def ver_ventas():
     ventas = cursor.fetchall()
     
     cursor.close()
-    desconectar(conn)
+    db.desconectar(conn)
     
     return render_template('admin/ventas/ver_ventas.html', ventas=ventas)
+
 # ----------------VER DETALLES DE VENTA----------------
 @app.route('/ventas/detalles/<int:venta_id>', methods=['GET'])
 @login_required
