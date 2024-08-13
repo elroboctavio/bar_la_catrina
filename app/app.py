@@ -14,6 +14,7 @@ import math
 from psycopg2.extras import RealDictCursor
 import json
 from functools import wraps
+from datetime import datetime
 # from blueprints.auth import bp as auth_bp
 
 
@@ -700,9 +701,9 @@ def editar_mesa(mesa_id):
 
 # ----------------CRUD DE VENTAS----------------
 # ----------------REGISTRAR DE VENTAS----------------
-@app.route('/ventas/nueva', methods=['GET', 'POST'])
+@app.route('/ventas/registrar_venta', methods=['GET', 'POST'])
 @login_required
-def procesar_venta():
+def registrar_venta():
     conn = db.conectar()
     cursor = conn.cursor()
     
@@ -785,6 +786,77 @@ def procesar_venta():
             cursor.close()
             desconectar(conn)
         
-        return redirect(url_for('procesar_venta'))
+        return redirect(url_for('registrar_venta'))
     
-    return render_template('admin/ventas/nueva.html', categorias=categorias, mesas=mesas, productos=productos)
+    return render_template('admin/ventas/registrar_venta.html', categorias=categorias, mesas=mesas, productos=productos)
+# ----------------VER DE VENTAS----------------
+@app.route('/ventas', methods=['GET'])
+@login_required
+def ver_ventas():
+    conn = db.conectar()
+    cursor = conn.cursor()
+    
+    # Obtener los parámetros de fecha del formulario
+    start_date = request.args.get('start_date')
+    end_date = request.args.get('end_date')
+    
+    # Construir la consulta SQL con filtros de fecha
+    query = """
+        SELECT v.id_venta, v.fecha_venta, v.cant_prod, v.total, v.forma_pago, m.num_mesa, CONCAT(u.nombre, ' ', u.ap_pat) AS nombre_completo, v.nombre_cliente
+        FROM ventas v
+        INNER JOIN mesa m ON v.fk_mesa = m.id_mesa
+        INNER JOIN usuario u ON v.fk_usuario = u.id_usuario
+    """
+    
+    # Añadir condiciones de fecha si están presentes
+    conditions = []
+    if start_date:
+        conditions.append(f"v.fecha_venta >= '{start_date}'")
+    if end_date:
+        conditions.append(f"v.fecha_venta <= '{end_date}'")
+    
+    if conditions:
+        query += " WHERE " + " AND ".join(conditions)
+    
+    query += " ORDER BY v.id_venta ASC"
+    
+    cursor.execute(query)
+    ventas = cursor.fetchall()
+    
+    cursor.close()
+    desconectar(conn)
+    
+    return render_template('admin/ventas/ver_ventas.html', ventas=ventas)
+# ----------------VER DETALLES DE VENTA----------------
+@app.route('/ventas/detalles/<int:venta_id>', methods=['GET'])
+@login_required
+def ver_detalles_venta(venta_id):
+    conn = db.conectar()
+    cursor = conn.cursor(cursor_factory=RealDictCursor)
+    
+    try:
+        # Obtener los detalles de la venta
+        cursor.execute('''
+            SELECT v.id_venta, v.fecha_venta, v.cant_prod, v.total, v.forma_pago, m.num_mesa, 
+            CONCAT(u.nombre, ' ', u.ap_pat) AS nombre_completo, v.nombre_cliente
+            FROM ventas v
+            INNER JOIN mesa m ON v.fk_mesa = m.id_mesa
+            INNER JOIN usuario u ON v.fk_usuario = u.id_usuario
+            WHERE v.id_venta = %s;
+        ''', (venta_id,))
+        venta = cursor.fetchone()
+        
+        # Obtener los productos de la venta
+        cursor.execute('''
+            SELECT dv.cantidad, dv.categoria_prod, dv.nombre_prod, dv.contenido_prod, dv.precio_prod, dv.subtotal
+            FROM detalles_venta dv
+            WHERE dv.fk_venta = %s;
+        ''', (venta_id,))
+        productos = cursor.fetchall()
+        
+    finally:
+        cursor.close()
+        db.desconectar(conn)
+    
+    return render_template('admin/ventas/ver_detalles_venta.html', venta=venta, productos=productos)
+

@@ -41,8 +41,8 @@
                         Ventas
                     </a>
                     <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="#">Ver Ventas</a></li>
-                        <li><a class="dropdown-item" href="#">Registrar Venta</a></li>
+                        <li><a class="dropdown-item" href="{{ url_for('ver_ventas') }}">Ver Ventas</a></li>
+                        <li><a class="dropdown-item" href="{{ url_for('registrar_venta') }}">Registrar Venta</a></li>
                     </ul>
                 </li>
                 {% if session['role'] == 'Administrador' %}
