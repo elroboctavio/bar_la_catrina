@@ -16,7 +16,7 @@ import json
 from functools import wraps
 from datetime import datetime
 import pdfkit
-
+import platform
 
 # from blueprints.auth import bp as auth_bp
 
@@ -897,13 +897,16 @@ def imprimir_ticket(venta_id):
         productos = cursor.fetchall()
     finally:
         cursor.close()
-        db.desconectar(conn)
+        desconectar(conn)
     
     # Renderizar la plantilla HTML
-    rendered = render_template('admin/ventas/ver_detalles_venta.html', venta=venta, productos=productos)
+    rendered = render_template('admin/ventas/ticket.html', venta=venta, productos=productos)
     
-    # Configuración de pdfkit
-    pdfkit_config = pdfkit.configuration(wkhtmltopdf='C:/Program Files/wkhtmltopdf/bin/wkhtmltopdf.exe')
+    # Configuración de pdfkit según el sistema operativo
+    if platform.system() == 'Windows':
+        pdfkit_config = pdfkit.configuration(wkhtmltopdf='C:/Program Files/wkhtmltopdf/bin/wkhtmltopdf.exe')
+    else:
+        pdfkit_config = pdfkit.configuration(wkhtmltopdf='/usr/local/bin/wkhtmltopdf')
     
     # Opciones de configuración para wkhtmltopdf
     options = {

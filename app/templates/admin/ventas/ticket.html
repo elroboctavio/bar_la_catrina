@@ -14,12 +14,12 @@
 
 {% block body %}
 <body class="bg-dark text-white">
-    {% block navbar %}
-        {% include 'navbar.html' %}
-    {% endblock %}
-
     {% block content %}
     <div class="container mt-5">
+        <div class="text-center mb-4">
+            <img src="{{ url_for('static', filename='img/logo.png', _external=True) }}" alt="Logo" width="75px">
+            <p>Bar La Catrina</p>
+        </div>
         <h1 class="mb-4 text-center">Ticket de Venta</h1>
         <div class="card mb-4">
             <div class="card-header">
@@ -60,7 +60,7 @@
                 {% endfor %}
             </tbody>
         </table>
-        <a href="{{ url_for('imprimir_ticket', venta_id=venta.id_venta) }}" class="btn btn-primary mt-3 no-print">Descargar Ticket</a>
+        <p>Gracias por su compra </p>
     </div>
     {% endblock %}
 </body>

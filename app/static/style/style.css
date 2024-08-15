@@ -59,3 +59,9 @@
     white-space: nowrap;
     text-align: left; /* Asegura que el texto esté alineado a la izquierda */
 }
+
+@media print {
+    .no-print {
+        display: none;
+    }
+}
