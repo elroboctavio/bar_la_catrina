@@ -1,6 +1,6 @@
 import os
 import psycopg2
-from flask import Flask, redirect, render_template, request, url_for, flash, get_flashed_messages, session, jsonify, json
+from flask import Flask, redirect, render_template, request, url_for, flash, get_flashed_messages, session, jsonify, make_response, send_file
 from flask_bootstrap import Bootstrap
 from flask_wtf import FlaskForm
 import forms
@@ -15,6 +15,9 @@ from psycopg2.extras import RealDictCursor
 import json
 from functools import wraps
 from datetime import datetime
+import pdfkit
+
+
 # from blueprints.auth import bp as auth_bp
 
 
@@ -802,7 +805,7 @@ def ver_ventas():
     
     # Construir la consulta SQL base
     query = """
-        SELECT v.id_venta, v.fecha_venta, v.cant_prod, v.total, v.forma_pago, m.num_mesa, 
+        SELECT v.id_venta,  TO_CHAR(v.fecha_venta, 'YYYY-MM-DD HH24:MI:SS') AS fecha_venta, v.cant_prod, v.total, v.forma_pago, m.num_mesa, 
         CONCAT(u.nombre, ' ', u.ap_pat) AS nombre_completo, v.nombre_cliente
         FROM ventas v
         INNER JOIN mesa m ON v.fk_mesa = m.id_mesa
@@ -843,7 +846,7 @@ def ver_detalles_venta(venta_id):
     try:
         # Obtener los detalles de la venta
         cursor.execute('''
-            SELECT v.id_venta, v.fecha_venta, v.cant_prod, v.total, v.forma_pago, m.num_mesa, 
+            SELECT v.id_venta, TO_CHAR(v.fecha_venta, 'YYYY-MM-DD HH24:MI:SS') AS fecha_venta, v.cant_prod, v.total, v.forma_pago, m.num_mesa, 
             CONCAT(u.nombre, ' ', u.ap_pat) AS nombre_completo, v.nombre_cliente
             FROM ventas v
             INNER JOIN mesa m ON v.fk_mesa = m.id_mesa
@@ -854,8 +857,9 @@ def ver_detalles_venta(venta_id):
         
         # Obtener los productos de la venta
         cursor.execute('''
-            SELECT dv.cantidad, dv.categoria_prod, dv.nombre_prod, dv.contenido_prod, dv.precio_prod, dv.subtotal
+            SELECT dv.cantidad, c.nombre_cat AS categoria_prod, dv.nombre_prod, dv.contenido_prod, dv.precio_prod, dv.subtotal
             FROM detalles_venta dv
+            INNER JOIN categoria c ON dv.categoria_prod = c.id_cat
             WHERE dv.fk_venta = %s;
         ''', (venta_id,))
         productos = cursor.fetchall()
@@ -866,3 +870,62 @@ def ver_detalles_venta(venta_id):
     
     return render_template('admin/ventas/ver_detalles_venta.html', venta=venta, productos=productos)
 
+@app.route('/ventas/imprimir_ticket/<int:venta_id>', methods=['GET'])
+@login_required
+def imprimir_ticket(venta_id):
+    conn = db.conectar()
+    cursor = conn.cursor(cursor_factory=RealDictCursor)
+    
+    try:
+        # Consultar la información de la venta
+        cursor.execute('''
+            SELECT v.id_venta, TO_CHAR(v.fecha_venta, 'YYYY-MM-DD HH24:MI:SS') AS fecha_venta, v.cant_prod, v.total, 
+            v.forma_pago, m.num_mesa, CONCAT(u.nombre, ' ', u.ap_pat) AS nombre_completo, v.nombre_cliente
+            FROM ventas v
+            INNER JOIN mesa m ON v.fk_mesa = m.id_mesa
+            INNER JOIN usuario u ON v.fk_usuario = u.id_usuario
+            WHERE v.id_venta = %s;
+        ''', (venta_id,))
+        venta = cursor.fetchone()
+
+        # Consultar los productos de la venta
+        cursor.execute('''
+            SELECT dv.cantidad, c.nombre_cat AS categoria_prod, dv.nombre_prod, dv.contenido_prod, dv.precio_prod, dv.subtotal
+            FROM detalles_venta dv
+            INNER JOIN categoria c ON dv.categoria_prod = c.id_cat
+            WHERE dv.fk_venta = %s;
+        ''', (venta_id,))
+        productos = cursor.fetchall()
+        
+    finally:
+        cursor.close()
+        db.desconectar(conn)
+    
+    # Renderizar la plantilla HTML
+    rendered = render_template('admin/ventas/ver_detalles_venta.html', venta=venta, productos=productos)
+    
+    # Configuración de pdfkit
+    pdfkit_config = pdfkit.configuration(wkhtmltopdf='C:/Program Files/wkhtmltopdf/bin/wkhtmltopdf.exe')
+    
+    # Opciones de configuración para wkhtmltopdf
+    options = {
+        'no-outline': None,
+        'disable-smart-shrinking': None,
+        'load-error-handling': 'ignore',
+        'enable-local-file-access': '',  # Asegura que se pueda acceder a archivos locales
+        'quiet': ''  # Reduce el output en consola
+    }
+    
+    try:
+        # Generar el PDF a partir del HTML renderizado
+        pdf = pdfkit.from_string(rendered, False, configuration=pdfkit_config, options=options)
+    except OSError as e:
+        # Manejo de errores en caso de que wkhtmltopdf falle
+        return f'Error al generar el PDF: {str(e)}', 500
+    
+    # Preparar la respuesta con el PDF
+    response = make_response(pdf)
+    response.headers['Content-Type'] = 'application/pdf'
+    response.headers['Content-Disposition'] = f'inline; filename=ticket_venta_{venta_id}.pdf'
+    
+    return response
