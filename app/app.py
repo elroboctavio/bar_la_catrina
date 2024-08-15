@@ -22,7 +22,7 @@ import platform
 
 
 app = Flask(__name__)
-app.run(debug=True)
+app.run(debug=1)
 app.secret_key='5258654.crz'
 bootstrap = Bootstrap(app)
 app.config['UPLOAD_FOLDER'] = 'app/static/uploads'
@@ -37,14 +37,6 @@ def pagina_no_encontrada(error):
 
 def acceso_no_autorizado(error):
     return redirect(url_for('login'))
-
-
-if __name__ == '__main__':
-    # csrf.init_app(app)
-    # app.register_blueprint(custom_tags)
-    app.register_error_handler(404, pagina_no_encontrada)
-    app.register_error_handler(401, acceso_no_autorizado)
-    app.run(debug=True, port=5000)
 
 
 
