@@ -62,7 +62,8 @@ def admin_required(f):
 @app.route('/')
 @login_required
 def index():
-    return render_template('index.html')
+    username = session.get('username')
+    return render_template('index.html', username=username)
 
 
 # ----------------LOGIN----------------
@@ -920,5 +921,122 @@ def imprimir_ticket(venta_id):
     response = make_response(pdf)
     response.headers['Content-Type'] = 'application/pdf'
     response.headers['Content-Disposition'] = f'inline; filename=ticket_venta_{venta_id}.pdf'
+    
+    return response
+
+@app.route('/ventas/reporte', methods=['GET'])
+@login_required
+@admin_required
+def reporte_ventas():
+    start_date = request.args.get('start_date')
+    end_date = request.args.get('end_date')
+    
+    conn = db.conectar()
+    cursor = conn.cursor(cursor_factory=RealDictCursor)
+    
+    try:
+        # Construir la consulta SQL base
+        query = '''
+            SELECT v.id_venta, TO_CHAR(v.fecha_venta, 'YYYY-MM-DD HH24:MI:SS') AS fecha_venta, v.cant_prod, v.total, v.forma_pago, m.num_mesa, 
+            CONCAT(u.nombre, ' ', u.ap_pat) AS nombre_completo, v.nombre_cliente
+            FROM ventas v
+            INNER JOIN mesa m ON v.fk_mesa = m.id_mesa
+            INNER JOIN usuario u ON v.fk_usuario = u.id_usuario
+        '''
+        
+        # Añadir condiciones de fecha si están presentes
+        conditions = []
+        if start_date:
+            conditions.append(f"v.fecha_venta >= '{start_date}'")
+        if end_date:
+            conditions.append(f"v.fecha_venta <= '{end_date}'")
+        
+        if conditions:
+            query += " WHERE " + " AND ".join(conditions)
+        
+        query += " ORDER BY v.id_venta ASC"
+        
+        cursor.execute(query)
+        ventas = cursor.fetchall()
+        
+        # Calcular la suma total de las ventas
+        total_ventas = sum(venta['total'] for venta in ventas)
+        
+    finally:
+        cursor.close()
+        db.desconectar(conn)
+    
+    return render_template('admin/ventas/reporte_ventas.html', ventas=ventas, total_ventas=total_ventas, start_date=start_date, end_date=end_date)
+
+@app.route('/ventas/imprimir_reporte', methods=['GET'])
+@login_required
+def imprimir_reporte():
+    start_date = request.args.get('start_date')
+    end_date = request.args.get('end_date')
+    
+    conn = db.conectar()
+    cursor = conn.cursor(cursor_factory=RealDictCursor)
+    
+    try:
+        # Construir la consulta SQL base
+        query = '''
+            SELECT v.id_venta, TO_CHAR(v.fecha_venta, 'YYYY-MM-DD HH24:MI:SS') AS fecha_venta, v.cant_prod, v.total, v.forma_pago, m.num_mesa, 
+            CONCAT(u.nombre, ' ', u.ap_pat) AS nombre_completo, v.nombre_cliente
+            FROM ventas v
+            INNER JOIN mesa m ON v.fk_mesa = m.id_mesa
+            INNER JOIN usuario u ON v.fk_usuario = u.id_usuario
+        '''
+        
+        # Añadir condiciones de fecha si están presentes
+        conditions = []
+        if start_date:
+            conditions.append(f"v.fecha_venta >= '{start_date}'")
+        if end_date:
+            conditions.append(f"v.fecha_venta <= '{end_date}'")
+        
+        if conditions:
+            query += " WHERE " + " AND ".join(conditions)
+        
+        query += " ORDER BY v.id_venta ASC"
+        
+        cursor.execute(query)
+        ventas = cursor.fetchall()
+        
+        # Calcular la suma total de las ventas
+        total_ventas = sum(venta['total'] for venta in ventas)
+        
+    finally:
+        cursor.close()
+        db.desconectar(conn)
+    
+    # Renderizar la plantilla HTML
+    rendered = render_template('admin/ventas/reporte_pdf.html', ventas=ventas, total_ventas=total_ventas, start_date=start_date, end_date=end_date)
+    
+    # Configuración de pdfkit según el sistema operativo
+    if platform.system() == 'Windows':
+        pdfkit_config = pdfkit.configuration(wkhtmltopdf='C:/Program Files/wkhtmltopdf/bin/wkhtmltopdf.exe')
+    else:
+        pdfkit_config = pdfkit.configuration(wkhtmltopdf='/usr/local/bin/wkhtmltopdf')
+    
+    # Opciones de configuración para wkhtmltopdf
+    options = {
+        'no-outline': None,
+        'disable-smart-shrinking': None,
+        'load-error-handling': 'ignore',
+        'enable-local-file-access': '',  # Asegura que se pueda acceder a archivos locales
+        'quiet': ''  # Reduce el output en consola
+    }
+    
+    try:
+        # Generar el PDF a partir del HTML renderizado
+        pdf = pdfkit.from_string(rendered, False, configuration=pdfkit_config, options=options)
+    except OSError as e:
+        # Manejo de errores en caso de que wkhtmltopdf falle
+        return f'Error al generar el PDF: {str(e)}', 500
+    
+    # Preparar la respuesta con el PDF
+    response = make_response(pdf)
+    response.headers['Content-Type'] = 'application/pdf'
+    response.headers['Content-Disposition'] = f'inline; filename=reporte_ventas.pdf'
     
     return response

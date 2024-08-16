@@ -38,6 +38,11 @@
                 Inicio de Usuario
             {% endif %}
         </h1>
+        
+    <div class="welcome-message">
+        <h3>Hola, bienvenido {{ username }}!</h3>
+    </div>
+    <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Bootstrap" width="400px">
     </div>
     {% endblock %}
 </body>
