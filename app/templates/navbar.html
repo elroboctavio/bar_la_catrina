@@ -43,8 +43,9 @@
                     <ul class="dropdown-menu">
                         <li><a class="dropdown-item" href="{{ url_for('ver_ventas') }}">Ver Ventas</a></li>
                         <li><a class="dropdown-item" href="{{ url_for('registrar_venta') }}">Registrar Venta</a></li>
+                        {% if session['role'] == 'Administrador' %}
                         <li><a class="dropdown-item" href="{{ url_for('reporte_ventas') }}">Reporte de Ventas</a></li>
-
+                        {% endif %}
                     </ul>
                 </li>
                 {% if session['role'] == 'Administrador' %}

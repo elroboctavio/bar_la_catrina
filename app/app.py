@@ -970,6 +970,7 @@ def reporte_ventas():
 
 @app.route('/ventas/imprimir_reporte', methods=['GET'])
 @login_required
+@admin_required
 def imprimir_reporte():
     start_date = request.args.get('start_date')
     end_date = request.args.get('end_date')

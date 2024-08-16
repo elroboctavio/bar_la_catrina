@@ -57,7 +57,7 @@
             <div class="col-md-6">
                     <div class="mb-3">
                         <label for="nombre" class="form-label">Nombre</label>
-                        <input type="text" class="form-control" id="nombre" name="nombre" pattern="[A-Za-z0-9\s]+" title="Solo se permiten letras, números y espacios" value="{{ producto[2] }}" required>
+                        <input type="text" class="form-control" id="nombre" name="nombre" pattern="[A-Za-z0-9\sñÑ]+" title="Solo se permiten letras, números y espacios" value="{{ producto[2] }}" required>
                     </div>
                     <div class="mb-3">
                         <label for="precio_u" class="form-label">Precio:</label>
@@ -73,7 +73,7 @@
                     </div>
                     <div class="mb-3">
                         <label for="contenido" class="form-label">Contenido</label>
-                        <select class="form-control" id="contenido" name="contenido" required>
+                        <select class="form-control" id="contenido" name="contenido">
                             <option value="" {% if producto[4]==none %}selected{% endif %}>No aplica</option>
                             <option value="500ml" {% if producto[4]=='500ml' %}selected{% endif %}>500ml</option>
                             <option value="1L" {% if producto[4]=='1L' %}selected{% endif %}>1L</option>
