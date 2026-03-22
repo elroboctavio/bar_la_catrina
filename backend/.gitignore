@@ -1,0 +1,29 @@
+# ===========================================================
+# .gitignore del backend
+# ===========================================================
+
+# Entorno virtual de Python
+.venv/
+venv/
+env/
+
+# Variables de entorno (¡NUNCA en git!)
+.env
+
+# Archivos compilados de Python
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Alembic
+alembic/versions/*.pyc
+
+# Pytest / coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Editores
+.vscode/
+.idea/
+*.swp

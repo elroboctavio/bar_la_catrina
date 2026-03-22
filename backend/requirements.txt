@@ -1,0 +1,14 @@
+# Dependencias del backend
+fastapi
+uvicorn[standard]
+sqlalchemy[asyncio]
+asyncpg
+alembic
+pydantic-settings
+python-jose[cryptography]
+bcrypt
+python-dotenv
+python-multipart
+httpx
+pytest
+pytest-asyncio
